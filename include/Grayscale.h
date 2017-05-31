@@ -1,0 +1,9 @@
+#ifndef GRAYSCALE_H
+#define GRAYSCALE_H
+
+#include "Structs.h"
+
+void applyGrayscale(Image* src, Image* dst);
+void applyGrayscaleMax(Image* src, Image* dst);
+
+#endif
