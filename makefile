@@ -1,11 +1,9 @@
 CC=gcc
-CFLAGS=-std=c99 -lm
+CFLAGS=-std=c99 -lm -g
 IDIR = include
 LODEDIR = lodepng
 OUTPUT = CannyEdge
-
 DEPS = $(IDIR)/*.h
-
 OBJ = CannyEdge.o Common.o GaussBlur.o Grayscale.o Log.o NonMaxSuppression.o SobelOperator.o Threshold.o Utils.o lodepng.o
 
 $%.o: %.c $(DEPS)
@@ -16,6 +14,8 @@ $(OUTPUT): $(OBJ)
 
 lodepng.o: lodepng/lodepng.c lodepng/lodepng.h
 	$(CC) -c -o $@ $< $(CFLAGS)
+
+all:    $(OUTPUT)
 
 .PHONY: clean
 

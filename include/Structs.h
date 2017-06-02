@@ -1,6 +1,11 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H
 
+#define FALSE 0
+#define TRUE 1
+
+typedef char bool;
+
 typedef struct
 {
 	unsigned char* data;

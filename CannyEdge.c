@@ -2,6 +2,7 @@
 #define _MATH_DEFINES_DEFINED
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "include/Utils.h"
 #include "include/Grayscale.h"
 #include "include/GaussBlur.h"
@@ -11,6 +12,7 @@
 #include "lodepng/lodepng.h"
 #include "include/Structs.h"
 #include "include/Log.h"
+#include <string.h>
 
 char benchamkEnabled;
 char outputImages;
@@ -20,25 +22,36 @@ Image* decodePng(const char* filename);
 void encodePng(const char* filename, Image* image);
 
 // Command Args
-/*char* getCmdOption(char ** begin, char ** end, const std::string & option)
+char* getCmdOption(char ** begin, char ** end, const char* option)
 {
-	char ** itr = std::find(begin, end, option);
-	if (itr != end && ++itr != end)
+	while(begin < end)
 	{
-		return *itr;
+		if(strstr(*begin, option) != NULL)
+		{
+			return *(++begin);
+		}
+
+		begin++;
 	}
+
 	return 0;
 }
 
-bool cmdOptionExists(char** begin, char** end, const std::string& option)
-{
-	return std::find(begin, end, option) != end;
-}
 
-bool cmdFlagExists(char** begin, char** end, const std::string& option)
+bool cmdOptionExists(char** begin, char** end, const char* option)
 {
-	return std::find(begin, end, option) != end;
-}*/
+	while(begin < end)
+	{
+		if(strstr(*begin, option) != NULL)
+		{
+			return TRUE;
+		}
+
+		begin++;
+	}
+
+	return FALSE;
+}
 
 
 uint64_t grayscale_t = 0, gauss_t = 0, sobel_t = 0, nonMax_t = 0, lowHigh_t = 0, hysteresis_t = 0;
@@ -46,7 +59,7 @@ uint64_t temp_t;
 
 int main(int argc, char * argv[])
 {
-	unsigned int times = 5;
+	unsigned int times = 1;
 
 	unsigned char gaussRadius = 2;
 	float gaussSigma = 1.4f;
@@ -55,7 +68,7 @@ int main(int argc, char * argv[])
 	benchamkEnabled = 0;
 	outputImages = 0;
 
-	/*char error;
+	bool error = FALSE;
 
 	if (cmdOptionExists(argv, argv + argc, "-t"))
 	{
@@ -87,26 +100,30 @@ int main(int argc, char * argv[])
 			printf("-gr MUST BE less than 20\n");
 			return -1;
 		}
+
+		printf("Gauss Radius = %d\n", gaussRadius);
 	}
 
 	if (cmdOptionExists(argv, argv + argc, "-gs"))
 	{
 		char* c_gaussSigma = getCmdOption(argv, argv + argc, "-gs");
 
-		gaussSigma = parseInt(c_gaussSigma, error);
+		gaussSigma = parseFloat(c_gaussSigma, &error);
 
 		if (error)
 		{
 			printf("-gs MUST BE A FLOAT\n");
 			return -1;
 		}
+
+		printf("Gauss Sigma = %f\n", gaussSigma);
 	}
 
 	if (cmdOptionExists(argv, argv + argc, "-mint"))
 	{
 		char* c_minThreshold = getCmdOption(argv, argv + argc, "-mint");
 
-		unsigned int i_minThreshold = parseInt(c_minThreshold, error);
+		unsigned int i_minThreshold = parseInt(c_minThreshold, &error);
 
 		if (error)
 		{
@@ -144,8 +161,8 @@ int main(int argc, char * argv[])
 		maxThreshold = i_maxThreshold;
 	}
 
-	outputImages = cmdFlagExists(argv, argv + argc, "-oe");
-	benchamkEnabled = cmdFlagExists(argv, argv + argc, "-be");*/
+	outputImages = cmdOptionExists(argv, argv + argc, "-oe");
+	benchamkEnabled = cmdOptionExists(argv, argv + argc, "-be");
 
 	// IMAGE LOAD
 	log_info("Starting...\n");
@@ -180,7 +197,7 @@ int main(int argc, char * argv[])
 		log_info("\nTotal: %lld \n", (grayscale_t + gauss_t + sobel_t + nonMax_t + lowHigh_t + hysteresis_t) / times);
 	}
 
-	log_info("COMPLTED");
+	log_info("COMPLTED\n\n");
 }
 
 void applyCanny(Image* src, unsigned char gaussRadius, float gaussSigma, unsigned char minThreshold, unsigned char maxThreshold)
