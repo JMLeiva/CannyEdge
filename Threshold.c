@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
+#include <string.h>
 
-void applyThreshold(Image* src, unsigned char threshold, Image* dst)
+void applyThreshold(const Image* src, const unsigned char threshold, Image* dst)
 {
 	emptyImageWithFormat(src->width, src->height, src->bpp, dst);
 
@@ -37,7 +38,7 @@ void applyThreshold(Image* src, unsigned char threshold, Image* dst)
 	}
 }
 
-void applyThresholdLowHigh(Image* src, unsigned char thresholdlow, unsigned char thresholdHigh, unsigned char vlow, unsigned char vHigh, Image* dst)
+void applyThresholdLowHigh(const Image* src, const unsigned char thresholdlow, const unsigned char thresholdHigh, const unsigned char vlow, const unsigned char vHigh, Image* dst)
 {
 	emptyImageWithFormat(src->width, src->height, src->bpp, dst);
 
@@ -77,7 +78,7 @@ void applyThresholdLowHigh(Image* src, unsigned char thresholdlow, unsigned char
 	}
 }
 
-void applyHysteresisThreshold(Image* src, Image* dst)
+void applyHysteresisThreshold(const Image* src, Image* dst)
 {
 	// TODO
 	assert(src->bpp == 1);

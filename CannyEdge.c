@@ -17,7 +17,7 @@
 char benchamkEnabled;
 char outputImages;
 
-void applyCanny(Image* src, unsigned char gaussRadius, float gaussSigma, unsigned char minThreshold, unsigned char maxThreshold);
+void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, unsigned char minThreshold, unsigned char maxThreshold);
 Image* decodePng(const char* filename);
 void encodePng(const char* filename, Image* image);
 
@@ -177,7 +177,7 @@ int main(int argc, char * argv[])
 	log_info("Image loaded successfully\n");
 	log_info("Starting Processing %d times\n", times);
 
-	for (int i = 0; i < times; i++)
+	for (unsigned int i = 0; i < times; i++)
 	{
 		applyCanny(src, gaussRadius, gaussSigma, minThreshold, maxThreshold);
 		log_info("%d\n", i);
@@ -200,7 +200,7 @@ int main(int argc, char * argv[])
 	log_info("COMPLTED\n\n");
 }
 
-void applyCanny(Image* src, unsigned char gaussRadius, float gaussSigma, unsigned char minThreshold, unsigned char maxThreshold)
+void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, unsigned char minThreshold, unsigned char maxThreshold)
 {
 	Image grayScale, gauss, sobelLum, sobelAngle, nonMax, lowHigh, hysteresis;
 

@@ -1,10 +1,14 @@
 #include "include/Common.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
-void performConvolutionStep(Image* image, SquareMatrix mat, unsigned int x, unsigned int y, short* dst);
+void performConvolutionStep(const Image* image, const SquareMatrix mat, const unsigned int x, const unsigned int y, short* dst);
 
-short* convolute(Image* src, SquareMatrix mat)
+extern short* convolute_asm(const Image* src, const SquareMatrix mat);
+
+short* convolute_c(const Image* src, const SquareMatrix mat)
 {
 	int dataSize = src->width * src->height * src->bpp;
 
@@ -29,7 +33,13 @@ short* convolute(Image* src, SquareMatrix mat)
 	return newData;
 }
 
-void performConvolutionStep(Image* image, SquareMatrix mat, unsigned int x, unsigned int y, short* dst)
+short* convolute(const Image* src, const SquareMatrix mat)
+{
+	convolute_asm(src, mat);
+	return convolute_c(src, mat);
+}
+
+void performConvolutionStep(const Image* image, const SquareMatrix mat, const unsigned int x, const unsigned int y, short* dst)
 {
 	int srcIndex;
 	int matIndex = 0;
@@ -38,16 +48,16 @@ void performConvolutionStep(Image* image, SquareMatrix mat, unsigned int x, unsi
 
 	float* fDst = (float*)malloc(image->bpp * sizeof(float));
 
-	for (char i = 0; i < image->bpp; i++)
+	for (unsigned char i = 0; i < image->bpp; i++)
 	{
-		fDst[i] = 0;
+		fDst[(int)i] = 0;
 	}
 
 	for (int my = -mat.size / 2; my <= mat.size / 2; my++)
 	{
 		for (int mx = -mat.size / 2; mx <= mat.size / 2; mx++)
 		{
-			if (y + my < 0 || y + my >= image->height)
+			if ((int)y + my < 0 || y + my >= image->height)
 			{
 				yOffset = 0;
 			}
@@ -56,7 +66,7 @@ void performConvolutionStep(Image* image, SquareMatrix mat, unsigned int x, unsi
 				yOffset = my;
 			}
 
-			if (x + mx < 0 || x + mx >= image->width)
+			if ((int)x + mx < 0 || x + mx >= image->width)
 			{
 				xOffset = 0;
 			}
@@ -69,17 +79,17 @@ void performConvolutionStep(Image* image, SquareMatrix mat, unsigned int x, unsi
 
 			float matValue = mat.data[matIndex];
 
-			for (char i = 0; i < image->bpp; i++)
+			for (unsigned char i = 0; i < image->bpp; i++)
 			{
 				float delta = image->data[srcIndex + i] * matValue;
 
-				if (fDst[i] + delta > 255)
+				if (fDst[(int)i] + delta > 255)
 				{
-					fDst[i] = 255;
+					fDst[(int)i] = 255;
 				}
 				else
 				{
-					fDst[i] += delta;
+					fDst[(int)i] += delta;
 				}
 			}
 
@@ -87,15 +97,15 @@ void performConvolutionStep(Image* image, SquareMatrix mat, unsigned int x, unsi
 		}
 	}
 
-	for (char i = 0; i < image->bpp; i++)
+	for (unsigned char i = 0; i < image->bpp; i++)
 	{
-		dst[i] = (short)fDst[i];
+		dst[i] = (short)fDst[(int)i];
 	}
 
 	free(fDst);
 }
 
-void emptyImageWithFormat(unsigned short width, unsigned short height, unsigned char bpp, Image* dst)
+void emptyImageWithFormat(const unsigned short width, const unsigned short height, const unsigned char bpp, Image* dst)
 {
 	dst->width = width;
 	dst->height = height;
@@ -103,7 +113,7 @@ void emptyImageWithFormat(unsigned short width, unsigned short height, unsigned 
 	dst->data = (unsigned char*)malloc(width * height * bpp);
 }
 
-void replaceImage(Image* dst, Image* src)
+void replaceImage(const Image* src, Image* dst)
 {
 	assert(dst->bpp == src->bpp);
 	assert(dst->width == src->width);
@@ -113,15 +123,15 @@ void replaceImage(Image* dst, Image* src)
 	dst->data = src->data;
 }
 
-void replaceData(Image* dst, short* src)
+void replaceData(const short* src, Image* dst)
 {
-	for (int i = 0; i < dst->width * dst->height * dst->bpp; i++)
+	for (unsigned int i = 0; i < dst->width * dst->height * dst->bpp; i++)
 	{
 		dst->data[i] = (char)abs(src[i]);
 	}
 }
 
-UC_Matrix getUC_Matrix(unsigned int width, unsigned int height)
+UC_Matrix getUC_Matrix(const unsigned int width, const unsigned int height)
 {
 	UC_Matrix m;
 	m.width = width;
@@ -130,7 +140,7 @@ UC_Matrix getUC_Matrix(unsigned int width, unsigned int height)
 	return m;
 }
 
-UC_Matrix getUC_Matrix_v(unsigned int width, unsigned int height, unsigned char defaultValue)
+UC_Matrix getUC_Matrix_v(const unsigned int width, const unsigned int height, const unsigned char defaultValue)
 {
 	UC_Matrix m;
 	m.width = width;
@@ -140,7 +150,7 @@ UC_Matrix getUC_Matrix_v(unsigned int width, unsigned int height, unsigned char 
 	return m;
 }
 
-UI_Matrix getUI_Matrix(unsigned int width, unsigned int height)
+UI_Matrix getUI_Matrix(const unsigned int width, const unsigned int height)
 {
 	UI_Matrix m;
 	m.width = width;
@@ -149,7 +159,7 @@ UI_Matrix getUI_Matrix(unsigned int width, unsigned int height)
 	return m;
 }
 
-UI_Matrix getUI_Matrix_v(unsigned int width, unsigned int height, unsigned char defaultValue)
+UI_Matrix getUI_Matrix_v(const unsigned int width, const unsigned int height, const unsigned char defaultValue)
 {
 	UI_Matrix m;
 	m.width = width;

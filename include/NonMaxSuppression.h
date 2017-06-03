@@ -3,5 +3,5 @@
 
 #include "Structs.h"
 
-void applyNonMaxSuppression(Image* lum, Image* angle, Image* dst);
+void applyNonMaxSuppression(const Image* lum, const Image* angle, Image* dst);
 #endif

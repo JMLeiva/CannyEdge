@@ -1,9 +1,9 @@
 #include "include/NonMaxSuppression.h"
 #include "include/Common.h"
 
-char isMax(Image* image, unsigned int x, unsigned int y, unsigned char angle, unsigned char bOffset);
+char isMax(const Image* image, const unsigned int x, const unsigned int y, const unsigned char angle, const unsigned char bOffset);
 
-void applyNonMaxSuppression(Image* lum, Image* angle, Image* dst)
+void applyNonMaxSuppression(const Image* lum, const Image* angle, Image* dst)
 {
 	emptyImageWithFormat(lum->width, lum->height, lum->bpp, dst);
 
@@ -28,7 +28,7 @@ void applyNonMaxSuppression(Image* lum, Image* angle, Image* dst)
 	}
 }
 
-char isMax(Image* image, unsigned int x, unsigned int y, unsigned char angle, unsigned char bOffset)
+char isMax(const Image* image, const unsigned int x, const unsigned int y, const unsigned char angle, const unsigned char bOffset)
 {
 
 	unsigned int xA, yA, xC, yC;
@@ -89,6 +89,7 @@ char isMax(Image* image, unsigned int x, unsigned int y, unsigned char angle, un
 	case 0:
 		xA = x;
 		xC = x;
+		break;
 	case 45:
 	case 90:
 	case 135:

@@ -13,10 +13,10 @@ void log_verbose(const char* format, ...);
 
 void log_sm(const SquareMatrix* mat);
 void log_um(const UC_Matrix* mat);
-void log_um_cap(const UC_Matrix* mat, unsigned int capW, unsigned int capH);
+void log_um_cap(const UC_Matrix* mat, const unsigned int capW, const unsigned int capH);
 void log_im(const UI_Matrix* mat);
-void log_im_cap(const UI_Matrix* mat, unsigned int capW, unsigned int capH);
+void log_im_cap(const UI_Matrix* mat, const unsigned int capW, const unsigned int capH);
 void log_i(const Image* image);
-void log_d(short* data, int width, int height, int bpp);
+void log_d(const short* data, const unsigned int width, const unsigned int height, const unsigned char bpp);
 
 #endif

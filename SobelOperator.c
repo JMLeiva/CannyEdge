@@ -10,9 +10,9 @@
 
 SquareMatrix getXMat();
 SquareMatrix getYMat();
-unsigned char normalizeAngle(float angle);
+unsigned char normalizeAngle(const float angle);
 
-void applySobelOperator(Image* src, Image* dstLum, Image* dstAngle)
+void applySobelOperator(const Image* src, Image* dstLum, Image* dstAngle)
 {
 	SquareMatrix xMat = getXMat();
 	SquareMatrix yMat = getYMat();
@@ -45,22 +45,22 @@ void applySobelOperator(Image* src, Image* dstLum, Image* dstAngle)
 	free(yMat.data);
 }
 
-Image xSobel(Image* image)
+Image xSobel(const Image* image)
 {
 	SquareMatrix xMat = getXMat();
 	Image result;
 	emptyImageWithFormat(image->width, image->height, image->bpp, &result);
-	replaceData(&result, convolute(image, xMat));
+	replaceData(convolute(image, xMat), &result);
 	return result;
 }
 
-Image ySobel(Image* image)
+Image ySobel(const Image* image)
 {
 	SquareMatrix yMat = getYMat();
 
 	Image result;
 	emptyImageWithFormat(image->width, image->height, image->bpp, &result);
-	replaceData(&result, convolute(image, yMat));
+	replaceData(convolute(image, yMat), &result);
 	return result;
 }
 
@@ -110,7 +110,7 @@ SquareMatrix getYMat()
 	return mat;
 }
 
-unsigned char normalizeAngle(float angle)
+unsigned char normalizeAngle(const float angle)
 {
 	if (angle > 0)
 	{

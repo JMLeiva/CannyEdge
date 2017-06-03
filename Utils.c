@@ -19,7 +19,7 @@ uint64_t rdtsc() {
 
 #endif
 
-int parseInt(char* str, bool* error)
+int parseInt(const char* str, bool* error)
 {
 	*error = FALSE;
 	int result = 0;
@@ -45,7 +45,7 @@ int parseInt(char* str, bool* error)
 	return result;
 }
 
-float parseFloat(char* str, bool* error)
+float parseFloat(const char* str, bool* error)
 {
 	*error = FALSE;
 	float resultInt = 0;
