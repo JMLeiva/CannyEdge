@@ -16,6 +16,18 @@ void log_info(const char* fmt, ...)
 #endif
 }
 
+void log_info_flush(const char* fmt, ...)
+{
+#if LOG_LEVEL >= LOG_LEVEL_INFO
+	va_list argp;
+	va_start(argp, fmt);
+
+	vprintf(fmt, argp);
+	fflush(stdout);
+	va_end(argp);
+#endif
+}
+
 void log_verbose(const char* fmt, ...)
 {
 #if LOG_LEVEL >= LOG_LEVEL_VERVOSE
@@ -24,6 +36,18 @@ void log_verbose(const char* fmt, ...)
 
 	vprintf(fmt, argp);
 
+	va_end(argp);
+#endif
+}
+
+void log_verbose_flush(const char* fmt, ...)
+{
+#if LOG_LEVEL >= LOG_LEVEL_VERVOSE
+	va_list argp;
+	va_start(argp, fmt);
+
+	vprintf(fmt, argp);
+	fflush(stdout);
 	va_end(argp);
 #endif
 }

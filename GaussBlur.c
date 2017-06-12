@@ -18,7 +18,10 @@ void applyGaussBlur(const Image* src, const unsigned char mSize, const float sig
 	dst->bpp = src->bpp;
 	dst->data = (unsigned char*)malloc(src->width * src->height * src->bpp);
 
-	replaceData(convolute(src, mat), dst);
+	short* convolutionData = convolute(src, mat);
+
+	replaceData(convolutionData, dst);
+	free(convolutionData);
 	free(mat.data);
 }
 

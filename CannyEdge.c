@@ -14,8 +14,9 @@
 #include "include/Log.h"
 #include <string.h>
 
-char benchamkEnabled;
-char outputImages;
+bool benchamkEnabled;
+bool outputImages;
+bool useAsm;
 
 void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, unsigned char minThreshold, unsigned char maxThreshold);
 Image* decodePng(const char* filename);
@@ -65,8 +66,11 @@ int main(int argc, char * argv[])
 	float gaussSigma = 1.4f;
 	unsigned char minThreshold = 30;
 	unsigned char maxThreshold = 120;
-	benchamkEnabled = 0;
-	outputImages = 0;
+
+
+	benchamkEnabled = FALSE;
+	outputImages = FALSE;
+	useAsm = FALSE;
 
 	bool error = FALSE;
 
@@ -163,6 +167,7 @@ int main(int argc, char * argv[])
 
 	outputImages = cmdOptionExists(argv, argv + argc, "-oe");
 	benchamkEnabled = cmdOptionExists(argv, argv + argc, "-be");
+	useAsm = cmdOptionExists(argv, argv + argc, "-asm");
 
 	// IMAGE LOAD
 	log_info("Starting...\n");
@@ -180,9 +185,10 @@ int main(int argc, char * argv[])
 	for (unsigned int i = 0; i < times; i++)
 	{
 		applyCanny(src, gaussRadius, gaussSigma, minThreshold, maxThreshold);
-		log_info("%d\n", i);
+		log_info_flush(".");
 	}
 
+	log_info("\n");
 	free(src->data);
 	free(src);
 
@@ -212,7 +218,14 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 		temp_t = rdtsc();
 	}
 
-	applyGrayscale(src, &grayScale);
+	if(!useAsm)
+	{
+		applyGrayscale_c(src, &grayScale);
+	}
+	else
+	{
+		applyGrayscale_asm(src, &grayScale);
+	}
 
 	if (benchamkEnabled)
 	{

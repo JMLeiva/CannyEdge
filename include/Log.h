@@ -9,7 +9,9 @@
 #include "Structs.h"
 
 void log_info(const char* format, ...);
+void log_info_flush(const char* format, ...);
 void log_verbose(const char* format, ...);
+void log_verbose_flush(const char* format, ...);
 
 void log_sm(const SquareMatrix* mat);
 void log_um(const UC_Matrix* mat);

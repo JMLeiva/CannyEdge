@@ -3,7 +3,8 @@
 
 #include "Structs.h"
 
-void applyGrayscale(const Image* src, Image* dst);
+extern void applyGrayscale_asm(const Image* src, Image* dst);
+void applyGrayscale_c(const Image* src, Image* dst);
 void applyGrayscaleMax(const Image* src, Image* dst);
 
 #endif

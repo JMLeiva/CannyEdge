@@ -3,8 +3,6 @@
 #include <math.h>
 #include <assert.h>
 
-extern void applyGrayscale_asm(const Image* src, Image* dst);
-
 void applyGrayscale_c(const Image* src, Image* dst)
 {
 	unsigned char* newData = (unsigned char*)malloc(src->width * src->height);
@@ -16,7 +14,7 @@ void applyGrayscale_c(const Image* src, Image* dst)
 	{
 		val = 0;
 
-		for (unsigned char b = 0; b < src->bpp || b < 3; b++)
+		for (unsigned char b = 0; b < src->bpp && b < 3; b++)
 		{
 			val += src->data[i + b];
 		}
@@ -31,13 +29,6 @@ void applyGrayscale_c(const Image* src, Image* dst)
 	dst->height = src->height;
 	dst->bpp = 1;
 }
-
-void applyGrayscale(const Image* src, Image* dst)
-{
-	applyGrayscale_asm(src, dst);
-	applyGrayscale_c(src, dst);
-}
-
 
 void applyGrayscaleMax(const Image* src, Image* dst)
 {

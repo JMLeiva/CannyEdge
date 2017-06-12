@@ -49,7 +49,7 @@ char isMax(const Image* image, const unsigned int x, const unsigned int y, const
 			yA = y-1;
 		}
 
-		if (y >= image->height)
+		if (y >= image->height-1)
 		{
 			yC = y;
 		}
@@ -73,7 +73,7 @@ char isMax(const Image* image, const unsigned int x, const unsigned int y, const
 			yC = y - 1;
 		}
 
-		if (y >= image->height)
+		if (y >= image->height-1)
 		{
 			yA = y;
 		}
@@ -102,7 +102,7 @@ char isMax(const Image* image, const unsigned int x, const unsigned int y, const
 			xA = x - 1;
 		}
 
-		if (x >= image->width)
+		if (x >= image->width-1)
 		{
 			xC = x;
 		}
