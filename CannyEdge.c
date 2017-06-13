@@ -19,7 +19,7 @@ bool outputImages;
 bool useAsm;
 
 void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, unsigned char minThreshold, unsigned char maxThreshold);
-Image* decodePng(const char* filename);
+Image* decodePng(const char* filename, unsigned char bpp);
 void encodePng(const char* filename, Image* image);
 
 // Command Args
@@ -71,6 +71,7 @@ int main(int argc, char * argv[])
 	benchamkEnabled = FALSE;
 	outputImages = FALSE;
 	useAsm = FALSE;
+	unsigned char load_bpp = 3;
 
 	bool error = FALSE;
 
@@ -165,6 +166,27 @@ int main(int argc, char * argv[])
 		maxThreshold = i_maxThreshold;
 	}
 
+	if (cmdOptionExists(argv, argv + argc, "-bpp"))
+		{
+			char* c_bpp = getCmdOption(argv, argv + argc, "-bpp");
+
+			unsigned int i_bpp = parseInt(c_bpp, &error);
+
+			if (error)
+			{
+				printf("-maxt MUST BE A INT\n");
+				return -1;
+			}
+
+			if (i_bpp > 4 || i_bpp < 3)
+			{
+				printf("-bpp MUST BE A CHAR (3 - 4)\n");
+				return -1;
+			}
+
+			load_bpp = i_bpp;
+		}
+
 	outputImages = cmdOptionExists(argv, argv + argc, "-oe");
 	benchamkEnabled = cmdOptionExists(argv, argv + argc, "-be");
 	useAsm = cmdOptionExists(argv, argv + argc, "-asm");
@@ -172,7 +194,7 @@ int main(int argc, char * argv[])
 	// IMAGE LOAD
 	log_info("Starting...\n");
 
-	Image* src = decodePng("SRC.png");
+	Image* src = decodePng("SRC.png", load_bpp);
 
 	if (src == NULL)
 	{
@@ -347,13 +369,26 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 }
 
 
-Image* decodePng(const char* filename)
+Image* decodePng(const char* filename, unsigned char bpp)
 {
 	Image* image = (Image*)malloc(sizeof(Image));
 	unsigned error;
 
-	error = lodepng_decode24_file(&image->data, &image->width, &image->height, filename);
-	image->bpp = 3;
+	if(bpp == 3)
+	{
+		error = lodepng_decode24_file(&image->data, &image->width, &image->height, filename);
+	}
+	else if(bpp == 4)
+	{
+		error = lodepng_decode32_file(&image->data, &image->width, &image->height, filename);
+	}
+	else
+	{
+		printf("error: BPP=%d not supported", bpp);
+		return NULL;
+	}
+
+	image->bpp = bpp;
 
 	if (error)
 	{
