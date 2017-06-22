@@ -4,11 +4,9 @@
 #include <assert.h>
 #include <string.h>
 
-void performConvolutionStep(const Image* image, const SquareMatrix mat, const unsigned int x, const unsigned int y, short* dst);
+void performConvolutionStep(const Image* image, const SquareMatrix* mat, const unsigned int x, const unsigned int y, short* dst);
 
-extern short* convolute_asm(const Image* src, const SquareMatrix mat);
-
-short* convolute_c(const Image* src, const SquareMatrix mat)
+short* convolute_c(const Image* src, const SquareMatrix* mat)
 {
 	int dataSize = src->width * src->height * src->bpp;
 
@@ -33,13 +31,8 @@ short* convolute_c(const Image* src, const SquareMatrix mat)
 	return newData;
 }
 
-short* convolute(const Image* src, const SquareMatrix mat)
-{
-	convolute_asm(src, mat);
-	return convolute_c(src, mat);
-}
 
-void performConvolutionStep(const Image* image, const SquareMatrix mat, const unsigned int x, const unsigned int y, short* dst)
+void performConvolutionStep(const Image* image, const SquareMatrix* mat, const unsigned int x, const unsigned int y, short* dst)
 {
 	int srcIndex;
 	int matIndex = 0;
@@ -53,9 +46,9 @@ void performConvolutionStep(const Image* image, const SquareMatrix mat, const un
 		fDst[(int)i] = 0;
 	}
 
-	for (int my = -mat.size / 2; my <= mat.size / 2; my++)
+	for (int my = -mat->size / 2; my <= mat->size / 2; my++)
 	{
-		for (int mx = -mat.size / 2; mx <= mat.size / 2; mx++)
+		for (int mx = -mat->size / 2; mx <= mat->size / 2; mx++)
 		{
 			if ((int)y + my < 0 || y + my >= image->height)
 			{
@@ -77,7 +70,7 @@ void performConvolutionStep(const Image* image, const SquareMatrix mat, const un
 
 			srcIndex = ((y + yOffset) * image->width + (x + xOffset)) * image->bpp;
 
-			float matValue = mat.data[matIndex];
+			float matValue = mat->data[matIndex];
 
 			for (unsigned char i = 0; i < image->bpp; i++)
 			{

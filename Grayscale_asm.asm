@@ -5,10 +5,10 @@ extern malloc
 extern free
 
 ; DEFINES
-	%define IMAGE_OS_DATA			0
-	%define IMAGE_OS_WIDTH			8
-	%define IMAGE_OS_HEIGHT			12
-	%define IMAGE_OS_BPP			16
+	%define IMAGE_OS_DATA			16
+	%define IMAGE_OS_WIDTH			0
+	%define IMAGE_OS_HEIGHT			4
+	%define IMAGE_OS_BPP			8
 
 section .data
 	align 16
@@ -90,7 +90,7 @@ applyGrayscale_asm: ;(const Image* src, Image* dst)
 	mov r13d, [rdi + IMAGE_OS_WIDTH]					; r13d = width
 	mov r14d, [rdi + IMAGE_OS_HEIGHT]					; r14d = height
 	mov r15b, [rdi + IMAGE_OS_BPP]						; r15b = bpp
-	mov rdi, [rdi]										; rdi = src data
+	mov rdi, [rdi  + IMAGE_OS_DATA]										; rdi = src data
 	mov r12, rax										; r12 = rax
 
 	cmp r15b, 3
@@ -240,9 +240,3 @@ loop_bpp4:												;for (unsigned int i = 0; i < size; i += src->bpp * 4)
 
 	add r11d, 16
 	jmp loop_bpp4
-
-
-
-
-
-

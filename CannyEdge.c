@@ -14,13 +14,28 @@
 #include "include/Log.h"
 #include <string.h>
 
+#define IMPL_C 0
+#define IMPL_ASM 1
+#define IMPL_ASM_YMM 2
+
 bool benchamkEnabled;
 bool outputImages;
-bool useAsm;
+unsigned char impl;
 
 void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, unsigned char minThreshold, unsigned char maxThreshold);
 Image* decodePng(const char* filename, unsigned char bpp);
 void encodePng(const char* filename, Image* image);
+
+int check_xcr0_ymm()
+{
+    uint32_t xcr0;
+#if defined(_MSC_VER)
+	xcr0 = (uint32_t)_xgetbv(0);  /* min VS2010 SP1 compiler is required */
+#else
+	__asm__("xgetbv" : "=a" (xcr0) : "c" (0) : "%edx");
+#endif
+	return ((xcr0 & 6) == 6); /* checking if xmm and ymm state are enabled in XCR0 */
+}
 
 // Command Args
 char* getCmdOption(char ** begin, char ** end, const char* option)
@@ -70,7 +85,8 @@ int main(int argc, char * argv[])
 
 	benchamkEnabled = FALSE;
 	outputImages = FALSE;
-	useAsm = FALSE;
+	impl = IMPL_ASM;
+
 	unsigned char load_bpp = 3;
 
 	bool error = FALSE;
@@ -100,9 +116,9 @@ int main(int argc, char * argv[])
 			return -1;
 		}
 
-		if (gaussRadius > 20)
+		if (gaussRadius > 7)
 		{
-			printf("-gr MUST BE less than 20\n");
+			printf("-gr MUST BE less than 7\n");
 			return -1;
 		}
 
@@ -167,29 +183,53 @@ int main(int argc, char * argv[])
 	}
 
 	if (cmdOptionExists(argv, argv + argc, "-bpp"))
+	{
+		char* c_bpp = getCmdOption(argv, argv + argc, "-bpp");
+
+		unsigned int i_bpp = parseInt(c_bpp, &error);
+
+		if (error)
 		{
-			char* c_bpp = getCmdOption(argv, argv + argc, "-bpp");
-
-			unsigned int i_bpp = parseInt(c_bpp, &error);
-
-			if (error)
-			{
-				printf("-maxt MUST BE A INT\n");
-				return -1;
-			}
-
-			if (i_bpp > 4 || i_bpp < 3)
-			{
-				printf("-bpp MUST BE A CHAR (3 - 4)\n");
-				return -1;
-			}
-
-			load_bpp = i_bpp;
+			printf("-maxt MUST BE A INT\n");
+			return -1;
 		}
+
+		if (i_bpp > 4 || i_bpp < 3)
+		{
+			printf("-bpp MUST BE A CHAR (3 - 4)\n");
+			return -1;
+		}
+
+		load_bpp = i_bpp;
+	}
 
 	outputImages = cmdOptionExists(argv, argv + argc, "-oe");
 	benchamkEnabled = cmdOptionExists(argv, argv + argc, "-be");
-	useAsm = cmdOptionExists(argv, argv + argc, "-asm");
+
+	if (cmdOptionExists(argv, argv + argc, "-impl"))
+	{
+		const char* c_impl = getCmdOption(argv, argv + argc, "-impl");
+
+		if(strcmp(c_impl, "c") == 0 || strcmp(c_impl, "C") == 0)
+		{
+			impl = IMPL_C;
+		}
+		else if(strcmp(c_impl, "asm") == 0 || strcmp(c_impl, "ASM") == 0)
+		{
+			impl = IMPL_ASM;
+		}
+		else if(strcmp(c_impl, "asm_y") == 0 || strcmp(c_impl, "ASM_Y") == 0)
+		{
+			printf("-impl ASM_Y is not supported yet\n");
+			return -1;
+			//impl = IMPL_ASM_YMM;
+		}
+		else
+		{
+			printf("-impl MUST BE [C | ASM | ASM_Y]\n");
+			return -1;
+		}
+	}
 
 	// IMAGE LOAD
 	log_info("Starting...\n");
@@ -240,13 +280,18 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 		temp_t = rdtsc();
 	}
 
-	if(!useAsm)
+	switch(impl)
 	{
+	case IMPL_C:
 		applyGrayscale_c(src, &grayScale);
-	}
-	else
-	{
-		applyGrayscale_asm(src, &grayScale);
+		break;
+	case IMPL_ASM:
+		applyGrayscale_c(src, &grayScale);
+		//applyGrayscale_asm(src, &grayScale, FALSE);
+		break;
+	case IMPL_ASM_YMM:
+		applyGrayscale_asm(src, &grayScale, TRUE);
+		break;
 	}
 
 	if (benchamkEnabled)
@@ -262,7 +307,19 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 		temp_t = rdtsc();
 	}
 
-	applyGaussBlur(&grayScale, gaussRadius * 2 + 1, gaussSigma, &gauss);
+	switch(impl)
+	{
+	case IMPL_C:
+		applyGaussBlur_c(&grayScale, gaussRadius * 2 + 1, gaussSigma, &gauss);
+		break;
+	case IMPL_ASM:
+		applyGaussBlur_asm(&grayScale, gaussRadius * 2 + 1, gaussSigma, &gauss);
+		break;
+	case IMPL_ASM_YMM:
+		// TODO
+		break;
+	}
+
 
 	if (benchamkEnabled)
 	{

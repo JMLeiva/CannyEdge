@@ -5,9 +5,10 @@
 #include <stdlib.h>
 
 SquareMatrix getMatrix(const unsigned char mSize, const float sigma);
+SquareMatrix getMatrixAligned(const unsigned char mSize, const float sigma);
 float getGaussValue(const int x, const int y, const float sigma);
 
-void applyGaussBlur(const Image* src, const unsigned char mSize, const float sigma, Image* dst)
+void applyGaussBlur_c(const Image* src, const unsigned char mSize, const float sigma, Image* dst)
 {
 	assert(mSize % 2 == 1);
 
@@ -18,7 +19,28 @@ void applyGaussBlur(const Image* src, const unsigned char mSize, const float sig
 	dst->bpp = src->bpp;
 	dst->data = (unsigned char*)malloc(src->width * src->height * src->bpp);
 
-	short* convolutionData = convolute(src, mat);
+	short* convolutionData = convolute_c(src, &mat);
+
+	replaceData(convolutionData, dst);
+	free(convolutionData);
+	free(mat.data);
+}
+
+void applyGaussBlur_asm(const Image* src, const unsigned char mSize, const float sigma, Image* dst)
+{
+	assert(mSize % 2 == 1);
+
+	SquareMatrix mat = getMatrixAligned(mSize, sigma);
+
+	dst->width = src->width;
+	dst->height = src->height;
+	dst->bpp = src->bpp;
+	dst->data = (unsigned char*)malloc(src->width * src->height * src->bpp);
+
+	assert(src->bpp == 1);
+
+	short* convolutionData = convolute_asm_1bpp(src, &mat);
+
 
 	replaceData(convolutionData, dst);
 	free(convolutionData);
@@ -40,6 +62,30 @@ SquareMatrix getMatrix(const unsigned char mSize, const float sigma)
 			mat.data[i] = getGaussValue(x, y, sigma);
 			i++;
 		}
+	}
+
+	return mat;
+}
+
+SquareMatrix getMatrixAligned(const unsigned char mSize, const float sigma)
+{
+	unsigned int virtualSize = ( (mSize / 4) + 1) * 4;
+
+	SquareMatrix mat;
+	mat.size = mSize;
+	mat.data = (float*)malloc(virtualSize*mSize * sizeof(float));
+
+	unsigned int i = 0;
+
+	for (int y = -mSize / 2; y <= mSize / 2; y++)
+	{
+		for (int x = -mSize / 2; x <= mSize / 2; x++)
+		{
+			mat.data[i] = getGaussValue(x, y, sigma);
+			i++;
+		}
+
+		i += virtualSize - (i % virtualSize);
 	}
 
 	return mat;

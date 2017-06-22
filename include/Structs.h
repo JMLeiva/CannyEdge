@@ -8,15 +8,17 @@ typedef char bool;
 
 typedef struct
 {
-	unsigned char* data;
 	unsigned int width;
 	unsigned int height;
 	unsigned char bpp;
+	__attribute__((__aligned__(16)))
+	unsigned char* data;
 } Image;
 
 typedef struct 
 {
 	unsigned char size;
+	__attribute__((__aligned__(16)))
 	float* data;
 } SquareMatrix;
 

@@ -6,7 +6,9 @@
 #define M_PI 3.14159265358979323846
 #define M_E  2.71828182845904523536
 
-short* convolute(const Image* src, const SquareMatrix mat);
+short* convolute_c(const Image* src, const SquareMatrix* mat);
+extern short* convolute_asm(const Image* src, const SquareMatrix* mat);
+
 void replaceImage(const Image* src, Image* dst);
 void replaceData(const short* src, Image* dst);
 void emptyImageWithFormat(const unsigned short width, const unsigned short height, const unsigned char bpp, Image* dst);

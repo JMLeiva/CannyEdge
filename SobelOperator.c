@@ -17,8 +17,8 @@ void applySobelOperator(const Image* src, Image* dstLum, Image* dstAngle)
 	SquareMatrix xMat = getXMat();
 	SquareMatrix yMat = getYMat();
 
-	short* xResult = convolute(src, xMat);
-	short* yResult = convolute(src, yMat);
+	short* xResult = convolute_c(src, &xMat);
+	short* yResult = convolute_c(src, &yMat);
 
 	//log(xResult, image->width, image->height, image->bpp);
 	//log(yResult, image->width, image->height, image->bpp);
@@ -50,7 +50,7 @@ Image xSobel(const Image* image)
 	SquareMatrix xMat = getXMat();
 	Image result;
 	emptyImageWithFormat(image->width, image->height, image->bpp, &result);
-	replaceData(convolute(image, xMat), &result);
+	replaceData(convolute_c(image, &xMat), &result);
 	return result;
 }
 
@@ -60,7 +60,7 @@ Image ySobel(const Image* image)
 
 	Image result;
 	emptyImageWithFormat(image->width, image->height, image->bpp, &result);
-	replaceData(convolute(image, yMat), &result);
+	replaceData(convolute_c(image, &yMat), &result);
 	return result;
 }
 
