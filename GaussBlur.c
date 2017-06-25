@@ -42,6 +42,31 @@ void applyGaussBlur_asm(const Image* src, const unsigned char mSize, const float
 	short* convolutionData = convolute_asm_1bpp(src, &mat);
 
 
+	// Borders are calculated in C
+	/*unsigned int x, y;
+
+	int srcIndex = 0;
+
+	for (y = 0; y < src->height; y++)
+	{
+		for (x = 0; x < mat.size / 2; x++)
+		{
+			srcIndex = (y * src->width + x) * src->bpp;
+			performConvolutionStep(src, &mat, x, y, convolutionData + srcIndex);
+
+			srcIndex += src->bpp;
+		}
+
+		for (x = src->width - mat.size / 2; x < src->width; x++)
+		{
+			srcIndex = (y * src->width + x) * src->bpp;
+			performConvolutionStep(src, &mat, x, y, convolutionData + srcIndex);
+
+			srcIndex += src->bpp;
+		}
+	}*/
+
+
 	replaceData(convolutionData, dst);
 	free(convolutionData);
 	free(mat.data);

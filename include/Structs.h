@@ -24,15 +24,15 @@ typedef struct
 
 typedef struct
 {
-	unsigned char width;
-	unsigned char height;
+	unsigned short width;
+	unsigned short height;
 	unsigned char* data;
 } UC_Matrix;
 
 typedef struct
 {
-	unsigned char width;
-	unsigned char height;
+	unsigned short width;
+	unsigned short height;
 	unsigned int* data;
 } UI_Matrix;
 

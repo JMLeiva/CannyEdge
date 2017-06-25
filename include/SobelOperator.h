@@ -3,9 +3,13 @@
 
 #include "Structs.h"
 
-Image xSobel(const Image* image);
-Image ySobel(const Image* image);
+Image xSobel_c(const Image* image);
+Image ySobel_c(const Image* image);
 
-void applySobelOperator(const Image* src, Image* dstLum, Image* dstAngle);
+Image xSobel_asm(const Image* image);
+Image ySobel_asm(const Image* image);
+
+void applySobelOperator_c(const Image* src, Image* dstLum, Image* dstAngle);
+void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle);
 
 #endif

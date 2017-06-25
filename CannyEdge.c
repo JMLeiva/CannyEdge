@@ -286,8 +286,8 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 		applyGrayscale_c(src, &grayScale);
 		break;
 	case IMPL_ASM:
-		applyGrayscale_c(src, &grayScale);
-		//applyGrayscale_asm(src, &grayScale, FALSE);
+		//applyGrayscale_c(src, &grayScale);
+		applyGrayscale_asm(src, &grayScale, FALSE);
 		break;
 	case IMPL_ASM_YMM:
 		applyGrayscale_asm(src, &grayScale, TRUE);
@@ -313,7 +313,8 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 		applyGaussBlur_c(&grayScale, gaussRadius * 2 + 1, gaussSigma, &gauss);
 		break;
 	case IMPL_ASM:
-		applyGaussBlur_asm(&grayScale, gaussRadius * 2 + 1, gaussSigma, &gauss);
+		applyGaussBlur_c(&grayScale, gaussRadius * 2 + 1, gaussSigma, &gauss);
+		//applyGaussBlur_asm(&grayScale, gaussRadius * 2 + 1, gaussSigma, &gauss);
 		break;
 	case IMPL_ASM_YMM:
 		// TODO
@@ -334,7 +335,19 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 		temp_t = rdtsc();
 	}
 
-	applySobelOperator(&gauss, &sobelLum, &sobelAngle);
+	switch(impl)
+	{
+	case IMPL_C:
+		applySobelOperator_c(&gauss, &sobelLum, &sobelAngle);
+		break;
+	case IMPL_ASM:
+		applySobelOperator_asm(&gauss, &sobelLum, &sobelAngle);
+		break;
+	case IMPL_ASM_YMM:
+		// TODO
+		break;
+	}
+
 
 	if (benchamkEnabled)
 	{
@@ -390,20 +403,35 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 
 	if (outputImages)
 	{
+		Image xS, yS;
+
+		switch(impl)
+		{
+		case IMPL_C:
+			yS = ySobel_c(&gauss);
+			xS = xSobel_c(&gauss);
+			break;
+		case IMPL_ASM:
+			yS = ySobel_asm(&gauss);
+			xS = xSobel_asm(&gauss);
+			break;
+		case IMPL_ASM_YMM:
+			// TODO
+			break;
+		}
+
 		log_verbose("Outputing Steps\n");
 		encodePng("01-Grayscale.png", &grayScale);
 		log_verbose(".");
 		encodePng("02-Gauss.png", &gauss);
 		log_verbose(".");
-		Image xS = xSobel(&gauss);
 		log_verbose(".");
 		encodePng("03A-SobelX.png", &xS);
 		log_verbose(".");
-		Image yS = ySobel(&gauss);
 		log_verbose(".");
 		encodePng("03B-SobelY.png", &yS);
 		log_verbose(".");
-		encodePng("03C-.png", &sobelLum);
+		encodePng("03C-Sobel.png", &sobelLum);
 		log_verbose(".");
 		encodePng("04-NonMax.png", &nonMax);
 		log_verbose(".");

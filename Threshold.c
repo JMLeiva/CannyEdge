@@ -85,6 +85,8 @@ void applyHysteresisThreshold(const Image* src, Image* dst)
 
 	emptyImageWithFormat(src->width, src->height, src->bpp, dst);
 	
+
+	// Groups cant exceed (width/2 + 1) * (height/2 + 1)
 	unsigned int maxGroupSize = ((src->width /2 + 1) * (src->height / 2) + 1);
 
 	unsigned int* conflictMap = (unsigned int*)malloc(maxGroupSize * sizeof(int));
@@ -133,7 +135,7 @@ void applyHysteresisThreshold(const Image* src, Image* dst)
 
 		int firstValue = -1;
 		int fisrtValueIndex = -1;
-		char conflicted = 0;
+		bool conflicted = 0;
 
 		for (int v = 0; v < 4; v++)
 		{

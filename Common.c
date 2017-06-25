@@ -4,8 +4,6 @@
 #include <assert.h>
 #include <string.h>
 
-void performConvolutionStep(const Image* image, const SquareMatrix* mat, const unsigned int x, const unsigned int y, short* dst);
-
 short* convolute_c(const Image* src, const SquareMatrix* mat)
 {
 	int dataSize = src->width * src->height * src->bpp;
@@ -76,14 +74,14 @@ void performConvolutionStep(const Image* image, const SquareMatrix* mat, const u
 			{
 				float delta = image->data[srcIndex + i] * matValue;
 
-				if (fDst[(int)i] + delta > 255)
-				{
-					fDst[(int)i] = 255;
-				}
-				else
-				{
-					fDst[(int)i] += delta;
-				}
+				//if (fDst[(int)i] + delta > 255)
+				//{
+				//	fDst[(int)i] = 255;
+				//}
+				//else
+				//{
+				fDst[(int)i] += delta;
+				//}
 			}
 
 			matIndex++;

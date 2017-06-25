@@ -78,11 +78,14 @@ convolute_asm_1bpp: ; (Image* src, SquareMatrix* mat) (mat is 16bytes aligned ho
 	mov r13b, [rsi+MAT_OS_SIZE] ; r13 = mat->size
 	sar r13b, 1					; r13 = mat->size / 2
 
-	mov r10d, 0		;y = 0
+	mov r10d, r13d		;y = mat->size / 2
 
 loop_y:				;for (y = 0; y < src->height; y++)
+	add r10d, r13d
 	cmp r10d, r9d
 	je	end_loop_y
+	sub r10d, r13d
+
 	xor r11d, r11d
 	mov r11d, r13d	;x = mat->size / 2
 
@@ -93,11 +96,9 @@ loop_y:				;for (y = 0; y < src->height; y++)
 	sal r12d, 1		; is a short array, index must be multiplied by 2
 
 loop_x:				;for (x = 0; x < src->width; x++)
-	add r11d, 16
 	add r11d, r13d
 	cmp r11d, r8d
 	jg	end_loop_x
-	sub r11d, 16
 	sub r11d, r13d
 
 	push rax
@@ -161,6 +162,17 @@ performConvolutionStep_1bpp: ;const Image* image, const SquareMatrix* mat, const
 	push r14
 	push r15
 
+	; TEST
+	mov		r14d, ecx
+	imul	r14d, [rdi + IMAGE_OS_WIDTH]
+	add		r14d, edx
+	cmp		r14d, 261
+	je		break
+	jmp		no_break;
+break:
+	nop
+no_break:
+
 	mov r14, r8  ; r14 = dst
 
 	mov r8b, [rsi+MAT_OS_SIZE]
@@ -179,8 +191,14 @@ performConvolutionStep_1bpp: ;const Image* image, const SquareMatrix* mat, const
 	mov edx, r12d
 	mov r15, rax		; Extend r15d to r15
 
+	; Calculate end of top line (y - matSize/2)
+	mov r13d, r8d
+	sar r13d, 1
+
 	xor		r10, r10
 	mov 	r10d, ecx 	;r10d = y
+	sub		r10d, r13d	;r10d = y - matSize/2
+
 	mov		r11d, [rdi+IMAGE_OS_WIDTH]
 	imul 	r10d, r11d	; r10d = y * src->width
 
@@ -196,10 +214,7 @@ performConvolutionStep_1bpp: ;const Image* image, const SquareMatrix* mat, const
 	push rcx
 	sub rsp, 8
 
-	; TEMP FOR TESTING
-	mov r13d, ecx ; <- REMOVE LATER
-
-	mov	ecx, r8d
+	mov	ecx, r8d	; restore ecx
 	add rsi, MAT_OS_DATA
 
 	; Set up Src and Mat Pointers
@@ -208,15 +223,6 @@ performConvolutionStep_1bpp: ;const Image* image, const SquareMatrix* mat, const
 	add		rdi, r10	; rdi = startOfLine
 
 	mov  	rsi, [rsi]
-
-
-		;TEST
-	cmp edx, 2
-	je  break_a
-	jmp no_break_a
-break_a:
-	nop
-no_break_a:
 
 	; result is stored in xmm1
 	pxor xmm1, xmm1
@@ -273,7 +279,7 @@ end_convolution_line_loop:
 cvt_to_short_negative:
 	mov ecx, eax
 	mov eax, 0
-	sub ax, cx
+	add ax, cx
 
 end_cvt_to_short:
 

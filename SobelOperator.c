@@ -2,6 +2,7 @@
 #include "include/Common.h"
 #include <math.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #define M_PI_8 0.392699
 #define M_3PI_8 1.17809
@@ -10,9 +11,13 @@
 
 SquareMatrix getXMat();
 SquareMatrix getYMat();
+
+SquareMatrix getXMatAligned();
+SquareMatrix getYMatAligned();
+
 unsigned char normalizeAngle(const float angle);
 
-void applySobelOperator(const Image* src, Image* dstLum, Image* dstAngle)
+void applySobelOperator_c(const Image* src, Image* dstLum, Image* dstAngle)
 {
 	SquareMatrix xMat = getXMat();
 	SquareMatrix yMat = getYMat();
@@ -29,8 +34,22 @@ void applySobelOperator(const Image* src, Image* dstLum, Image* dstAngle)
 	{
 		for (int c = 0; c < src->bpp; c++)
 		{
+			if(i == 260)
+			{
+				printf("asdasd");
+			}
+
 			float v = abs(xResult[i]) + abs(yResult[i]);//sqrt(xResult.data[i] * xResult.data[i] + yResult.data[i] * yResult.data[i]);
-			dstLum->data[i] = (unsigned char)v;
+
+			if(v > 255)
+			{
+				dstLum->data[i] = 255;
+			}
+			else
+			{
+				dstLum->data[i] = (unsigned char)v;
+			}
+
 			short angle = 0;
 
 			angle = normalizeAngle(atan2f(xResult[i], yResult[i]));
@@ -45,7 +64,110 @@ void applySobelOperator(const Image* src, Image* dstLum, Image* dstAngle)
 	free(yMat.data);
 }
 
-Image xSobel(const Image* image)
+void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
+{
+	SquareMatrix xMat = getXMatAligned();
+	SquareMatrix yMat = getYMatAligned();
+
+	short* xResult = convolute_asm_1bpp(src, &xMat);
+	short* yResult = convolute_asm_1bpp(src, &yMat);
+
+
+	//////////////////////////////////////////////////////////////////////////////
+	// Borders are calculated in C
+	//////////////////////////////////////////////////////////////////////////////
+	SquareMatrix xMatBorder = getXMat();
+	SquareMatrix yMatBorder = getYMat();
+
+	unsigned int x, y;
+
+	int srcIndex = 0;
+
+	// VERTICAL BORDERS
+	for (y = 0; y < src->height; y++)
+	{
+		for (x = 0; x < xMatBorder.size / 2; x++)
+		{
+			srcIndex = (y * src->width + x) * src->bpp;
+
+			performConvolutionStep(src, &xMatBorder, x, y, xResult + srcIndex);
+			performConvolutionStep(src, &yMatBorder, x, y, yResult + srcIndex);
+
+			srcIndex += src->bpp;
+		}
+
+		for (x = src->width - xMatBorder.size / 2; x < src->width; x++)
+		{
+			srcIndex = (y * src->width + x) * src->bpp;
+
+			performConvolutionStep(src, &xMatBorder, x, y, xResult + srcIndex);
+			performConvolutionStep(src, &yMatBorder, x, y, yResult + srcIndex);
+
+			srcIndex += src->bpp;
+		}
+	}
+
+	// HORIZONTAL BORDERS
+	for (x = 0; x < src->width; x++)
+	{
+		for (y = 0; y < xMatBorder.size / 2; y++)
+		{
+			srcIndex = (y * src->width + x) * src->bpp;
+
+			performConvolutionStep(src, &xMatBorder, x, y, xResult + srcIndex);
+			performConvolutionStep(src, &yMatBorder, x, y, yResult + srcIndex);
+
+			srcIndex += src->bpp;
+		}
+
+		for (y = src->height - xMatBorder.size / 2; y < src->height; y++)
+		{
+			srcIndex = (y * src->width + x) * src->bpp;
+
+			performConvolutionStep(src, &xMatBorder, x, y, xResult + srcIndex);
+			performConvolutionStep(src, &yMatBorder, x, y, yResult + srcIndex);
+
+			srcIndex += src->bpp;
+		}
+	}
+
+	emptyImageWithFormat(src->width, src->height, src->bpp, dstLum);
+	emptyImageWithFormat(src->width, src->height, src->bpp, dstAngle);
+
+	for (unsigned int i = 0; i < src->width * src->height * src->bpp; i++)
+	{
+		for (int c = 0; c < src->bpp; c++)
+		{
+			if(i == 260)
+			{
+				printf("asdasd");
+			}
+
+			float v = abs(xResult[i]) + abs(yResult[i]);//sqrt(xResult.data[i] * xResult.data[i] + yResult.data[i] * yResult.data[i]);
+			if(v > 255)
+			{
+				dstLum->data[i] = 255;
+			}
+			else
+			{
+				dstLum->data[i] = (unsigned char)v;
+			}
+
+			short angle = 0;
+
+			angle = normalizeAngle(atan2f(xResult[i], yResult[i]));
+
+			dstAngle->data[i] = angle;
+		}
+	}
+
+	free(xResult);
+	free(yResult);
+	free(xMat.data);
+	free(yMat.data);
+}
+
+Image xSobel_c(const Image* image)
 {
 	SquareMatrix xMat = getXMat();
 	Image result;
@@ -54,7 +176,7 @@ Image xSobel(const Image* image)
 	return result;
 }
 
-Image ySobel(const Image* image)
+Image ySobel_c(const Image* image)
 {
 	SquareMatrix yMat = getYMat();
 
@@ -63,6 +185,26 @@ Image ySobel(const Image* image)
 	replaceData(convolute_c(image, &yMat), &result);
 	return result;
 }
+
+Image xSobel_asm(const Image* image)
+{
+	SquareMatrix xMat = getXMatAligned();
+	Image result;
+	emptyImageWithFormat(image->width, image->height, image->bpp, &result);
+	replaceData(convolute_asm_1bpp(image, &xMat), &result);
+	return result;
+}
+
+Image ySobel_asm(const Image* image)
+{
+	SquareMatrix yMat = getYMatAligned();
+
+	Image result;
+	emptyImageWithFormat(image->width, image->height, image->bpp, &result);
+	replaceData(convolute_asm_1bpp(image, &yMat), &result);
+	return result;
+}
+
 
 SquareMatrix getXMat()
 {
@@ -106,6 +248,52 @@ SquareMatrix getYMat()
 	mat.data[6] = 1;
 	mat.data[7] = 2;
 	mat.data[8] = 1;
+
+	return mat;
+}
+
+SquareMatrix getXMatAligned()
+{
+	SquareMatrix mat;
+
+	mat.size = 3;
+
+	mat.data = (float*)malloc(16 * sizeof(float));
+
+	mat.data[0] = -1;
+	mat.data[1] = 0;
+	mat.data[2] = 1;
+
+	mat.data[4] = -2;
+	mat.data[5] = 0;
+	mat.data[6] = 2;
+
+	mat.data[8] = -1;
+	mat.data[9] = 0;
+	mat.data[10] = 1;
+
+	return mat;
+}
+
+SquareMatrix getYMatAligned()
+{
+	SquareMatrix mat;
+
+	mat.size = 3;
+
+	mat.data = (float*)malloc(16 * sizeof(float));
+
+	mat.data[0] = -1;
+	mat.data[1] = -2;
+	mat.data[2] = -1;
+
+	mat.data[4] = 0;
+	mat.data[5] = 0;
+	mat.data[6] = 0;
+
+	mat.data[8] = 1;
+	mat.data[9] = 2;
+	mat.data[10] = 1;
 
 	return mat;
 }
