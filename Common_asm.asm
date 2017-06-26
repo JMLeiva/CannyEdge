@@ -366,7 +366,7 @@ loop_sections:
 	add ecx, r13d ; <- x_offset
 
 	cmp	ecx, 0
-	je	line_aligned
+	je	check_double_line
 	jmp	line_unaligned
 
 line_aligned:
@@ -375,9 +375,15 @@ line_aligned:
 
 line_unaligned:
 line_unaligned_loop:
-	psrldq xmm2, 1	;align (psrldq can only be used with imm8, not registers)
-	loop line_unaligned_loop
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; THIS IS TOO SLOW
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;psrldq xmm2, 1	;align (psrldq can only be used with imm8, not registers)
+	;loop line_unaligned_loop
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	call shift_xmm2_right
 
+check_double_line:
 ; If data is really separated by 16bytes alignment, must do another read, algin and join
 	mov	ecx, r9d 	; x
 	add ecx, r13d   ; x + offset
@@ -404,13 +410,23 @@ line_unaligned_loop:
 
 
 line_unaligned_loop_2_left:
-	pslldq xmm3, 1	;inverse align (psrldq can only be used with imm8, not registers)
-	loop line_unaligned_loop_2_left
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; THIS IS TOO SLOW
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;pslldq xmm3, 1	;inverse align (psrldq can only be used with imm8, not registers)
+	;loop line_unaligned_loop_2_left
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	call shift_xmm3_left
 	jmp  line_unaligned_loop_2_end
 
 line_unaligned_loop_2_right:
-	psrldq xmm3, 1	;inverse align (psrldq can only be used with imm8, not registers)
-	loop line_unaligned_loop_2_right
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; THIS IS TOO SLOW
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;psrldq xmm3, 1	;inverse align (psrldq can only be used with imm8, not registers)
+	;loop line_unaligned_loop_2_right
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	call shift_xmm3_right
 
 line_unaligned_loop_2_end:
 	por xmm2, xmm3 ; -< Esto esta mal
@@ -485,3 +501,264 @@ end_loop_sections:
 	pop rbp
 
 	ret			; return
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SHIFTING FUNCTIONS
+
+shift_xmm2_right:	; (ecx times)
+	cmp	ecx, 0
+	je	shift_xmm2_right_0
+	cmp ecx, 1
+	je	shift_xmm2_right_1
+	cmp ecx, 2
+	je	shift_xmm2_right_2
+	cmp ecx, 3
+	je	shift_xmm2_right_3
+	cmp ecx, 4
+	je	shift_xmm2_right_4
+	cmp ecx, 5
+	je	shift_xmm2_right_5
+	cmp ecx, 6
+	je	shift_xmm2_right_6
+	cmp ecx, 7
+	je	shift_xmm2_right_7
+	cmp ecx, 8
+	je	shift_xmm2_right_8
+	cmp ecx, 9
+	je	shift_xmm2_right_9
+	cmp ecx, 10
+	je	shift_xmm2_right_10
+	cmp ecx, 11
+	je	shift_xmm2_right_11
+	cmp ecx, 12
+	je	shift_xmm2_right_12
+	cmp ecx, 13
+	je	shift_xmm2_right_13
+	cmp ecx, 14
+	je	shift_xmm2_right_14
+	cmp ecx, 15
+	je	shift_xmm2_right_15
+	; greater than 16
+	pxor xmm2, xmm2
+	ret	;
+
+shift_xmm2_right_0:
+	ret
+shift_xmm2_right_1:
+	psrldq xmm2, 1
+	ret
+shift_xmm2_right_2:
+	psrldq xmm2, 2
+	ret
+shift_xmm2_right_3:
+	psrldq xmm2, 3
+	ret
+shift_xmm2_right_4:
+	psrldq xmm2, 4
+	ret
+shift_xmm2_right_5:
+	psrldq xmm2, 5
+	ret
+shift_xmm2_right_6:
+	psrldq xmm2, 6
+	ret
+shift_xmm2_right_7:
+	psrldq xmm2, 7
+	ret
+shift_xmm2_right_8:
+	psrldq xmm2, 8
+	ret
+shift_xmm2_right_9:
+	psrldq xmm2, 9
+	ret
+shift_xmm2_right_10:
+	psrldq xmm2, 10
+	ret
+shift_xmm2_right_11:
+	psrldq xmm2, 11
+	ret
+shift_xmm2_right_12:
+	psrldq xmm2, 12
+	ret
+shift_xmm2_right_13:
+	psrldq xmm2, 13
+	ret
+shift_xmm2_right_14:
+	psrldq xmm2, 14
+	ret
+shift_xmm2_right_15:
+	psrldq xmm2, 15
+	ret
+
+
+
+
+shift_xmm3_right:	; (ecx times)
+	cmp	ecx, 0
+	je	shift_xmm3_right_0
+	cmp ecx, 1
+	je	shift_xmm3_right_1
+	cmp ecx, 2
+	je	shift_xmm3_right_2
+	cmp ecx, 3
+	je	shift_xmm3_right_3
+	cmp ecx, 4
+	je	shift_xmm3_right_4
+	cmp ecx, 5
+	je	shift_xmm3_right_5
+	cmp ecx, 6
+	je	shift_xmm3_right_6
+	cmp ecx, 7
+	je	shift_xmm3_right_7
+	cmp ecx, 8
+	je	shift_xmm3_right_8
+	cmp ecx, 9
+	je	shift_xmm3_right_9
+	cmp ecx, 10
+	je	shift_xmm3_right_10
+	cmp ecx, 11
+	je	shift_xmm3_right_11
+	cmp ecx, 12
+	je	shift_xmm3_right_12
+	cmp ecx, 13
+	je	shift_xmm3_right_13
+	cmp ecx, 14
+	je	shift_xmm3_right_14
+	cmp ecx, 15
+	je	shift_xmm3_right_15
+	; greater than 16
+	pxor xmm3, xmm3
+	ret	;
+
+shift_xmm3_right_0:
+	ret
+shift_xmm3_right_1:
+	psrldq xmm3, 1
+	ret
+shift_xmm3_right_2:
+	psrldq xmm3, 2
+	ret
+shift_xmm3_right_3:
+	psrldq xmm3, 3
+	ret
+shift_xmm3_right_4:
+	psrldq xmm3, 4
+	ret
+shift_xmm3_right_5:
+	psrldq xmm3, 5
+	ret
+shift_xmm3_right_6:
+	psrldq xmm3, 6
+	ret
+shift_xmm3_right_7:
+	psrldq xmm3, 7
+	ret
+shift_xmm3_right_8:
+	psrldq xmm3, 8
+	ret
+shift_xmm3_right_9:
+	psrldq xmm3, 9
+	ret
+shift_xmm3_right_10:
+	psrldq xmm3, 10
+	ret
+shift_xmm3_right_11:
+	psrldq xmm3, 11
+	ret
+shift_xmm3_right_12:
+	psrldq xmm3, 12
+	ret
+shift_xmm3_right_13:
+	psrldq xmm3, 13
+	ret
+shift_xmm3_right_14:
+	psrldq xmm3, 14
+	ret
+shift_xmm3_right_15:
+	psrldq xmm3, 15
+	ret
+
+shift_xmm3_left:	; (ecx times)
+	cmp	ecx, 0
+	je	shift_xmm3_left_0
+	cmp ecx, 1
+	je	shift_xmm3_left_1
+	cmp ecx, 2
+	je	shift_xmm3_left_2
+	cmp ecx, 3
+	je	shift_xmm3_left_3
+	cmp ecx, 4
+	je	shift_xmm3_left_4
+	cmp ecx, 5
+	je	shift_xmm3_left_5
+	cmp ecx, 6
+	je	shift_xmm3_left_6
+	cmp ecx, 7
+	je	shift_xmm3_left_7
+	cmp ecx, 8
+	je	shift_xmm3_left_8
+	cmp ecx, 9
+	je	shift_xmm3_left_9
+	cmp ecx, 10
+	je	shift_xmm3_left_10
+	cmp ecx, 11
+	je	shift_xmm3_left_11
+	cmp ecx, 12
+	je	shift_xmm3_left_12
+	cmp ecx, 13
+	je	shift_xmm3_left_13
+	cmp ecx, 14
+	je	shift_xmm3_left_14
+	cmp ecx, 15
+	je	shift_xmm3_left_15
+	; greater than 16
+	pxor xmm3, xmm3
+	ret	;
+
+shift_xmm3_left_0:
+	ret
+shift_xmm3_left_1:
+	pslldq xmm3, 1
+	ret
+shift_xmm3_left_2:
+	pslldq xmm3, 2
+	ret
+shift_xmm3_left_3:
+	pslldq xmm3, 3
+	ret
+shift_xmm3_left_4:
+	pslldq xmm3, 4
+	ret
+shift_xmm3_left_5:
+	pslldq xmm3, 5
+	ret
+shift_xmm3_left_6:
+	pslldq xmm3, 6
+	ret
+shift_xmm3_left_7:
+	pslldq xmm3, 7
+	ret
+shift_xmm3_left_8:
+	pslldq xmm3, 8
+	ret
+shift_xmm3_left_9:
+	pslldq xmm3, 9
+	ret
+shift_xmm3_left_10:
+	pslldq xmm3, 10
+	ret
+shift_xmm3_left_11:
+	pslldq xmm3, 11
+	ret
+shift_xmm3_left_12:
+	pslldq xmm3, 12
+	ret
+shift_xmm3_left_13:
+	pslldq xmm3, 13
+	ret
+shift_xmm3_left_14:
+	pslldq xmm3, 14
+	ret
+shift_xmm3_left_15:
+	pslldq xmm3, 15
+	ret

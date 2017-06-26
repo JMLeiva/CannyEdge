@@ -42,17 +42,22 @@ void applyGaussBlur_asm(const Image* src, const unsigned char mSize, const float
 	short* convolutionData = convolute_asm_1bpp(src, &mat);
 
 
+	//////////////////////////////////////////////////////////////////////////////
 	// Borders are calculated in C
-	/*unsigned int x, y;
+	//////////////////////////////////////////////////////////////////////////////
+	// VERTICAL BORDERS
+	SquareMatrix matBorder = getMatrix(mSize, sigma);
+
+	unsigned int x, y;
 
 	int srcIndex = 0;
 
 	for (y = 0; y < src->height; y++)
 	{
-		for (x = 0; x < mat.size / 2; x++)
+		for (x = 0; x < matBorder.size / 2; x++)
 		{
 			srcIndex = (y * src->width + x) * src->bpp;
-			performConvolutionStep(src, &mat, x, y, convolutionData + srcIndex);
+			performConvolutionStep(src, &matBorder, x, y, convolutionData + srcIndex);
 
 			srcIndex += src->bpp;
 		}
@@ -60,11 +65,33 @@ void applyGaussBlur_asm(const Image* src, const unsigned char mSize, const float
 		for (x = src->width - mat.size / 2; x < src->width; x++)
 		{
 			srcIndex = (y * src->width + x) * src->bpp;
-			performConvolutionStep(src, &mat, x, y, convolutionData + srcIndex);
+			performConvolutionStep(src, &matBorder, x, y, convolutionData + srcIndex);
 
 			srcIndex += src->bpp;
 		}
-	}*/
+	}
+
+	// HORIZONTAL BORDERS
+	for (x = 0; x < src->width; x++)
+	{
+		for (y = 0; y < matBorder.size / 2; y++)
+		{
+			srcIndex = (y * src->width + x) * src->bpp;
+
+			performConvolutionStep(src, &matBorder, x, y, convolutionData + srcIndex);
+
+			srcIndex += src->bpp;
+		}
+
+		for (y = src->height - matBorder.size / 2; y < src->height; y++)
+		{
+			srcIndex = (y * src->width + x) * src->bpp;
+
+			performConvolutionStep(src, &matBorder, x, y, convolutionData + srcIndex);
+
+			srcIndex += src->bpp;
+		}
+	}
 
 
 	replaceData(convolutionData, dst);

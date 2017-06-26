@@ -313,8 +313,7 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 		applyGaussBlur_c(&grayScale, gaussRadius * 2 + 1, gaussSigma, &gauss);
 		break;
 	case IMPL_ASM:
-		applyGaussBlur_c(&grayScale, gaussRadius * 2 + 1, gaussSigma, &gauss);
-		//applyGaussBlur_asm(&grayScale, gaussRadius * 2 + 1, gaussSigma, &gauss);
+		applyGaussBlur_asm(&grayScale, gaussRadius * 2 + 1, gaussSigma, &gauss);
 		break;
 	case IMPL_ASM_YMM:
 		// TODO

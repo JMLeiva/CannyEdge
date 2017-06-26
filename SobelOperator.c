@@ -34,11 +34,6 @@ void applySobelOperator_c(const Image* src, Image* dstLum, Image* dstAngle)
 	{
 		for (int c = 0; c < src->bpp; c++)
 		{
-			if(i == 260)
-			{
-				printf("asdasd");
-			}
-
 			float v = abs(xResult[i]) + abs(yResult[i]);//sqrt(xResult.data[i] * xResult.data[i] + yResult.data[i] * yResult.data[i]);
 
 			if(v > 255)
@@ -138,11 +133,6 @@ void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
 	{
 		for (int c = 0; c < src->bpp; c++)
 		{
-			if(i == 260)
-			{
-				printf("asdasd");
-			}
-
 			float v = abs(xResult[i]) + abs(yResult[i]);//sqrt(xResult.data[i] * xResult.data[i] + yResult.data[i] * yResult.data[i]);
 			if(v > 255)
 			{
