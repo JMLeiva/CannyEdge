@@ -40,9 +40,12 @@ int check_xcr0_ymm()
 // Command Args
 char* getCmdOption(char ** begin, char ** end, const char* option)
 {
+	size_t size = strlen(option);
+
 	while(begin < end)
 	{
-		if(strstr(*begin, option) != NULL)
+		char* r = strstr(*begin, option);
+		if(r != NULL && *(*begin+size) == NULL)
 		{
 			return *(++begin);
 		}
@@ -56,9 +59,12 @@ char* getCmdOption(char ** begin, char ** end, const char* option)
 
 bool cmdOptionExists(char** begin, char** end, const char* option)
 {
+	size_t size = strlen(option);
+
 	while(begin < end)
 	{
-		if(strstr(*begin, option) != NULL)
+		char* r = strstr(*begin, option);
+		if(r != NULL && *(*begin+size) == NULL)
 		{
 			return TRUE;
 		}
@@ -86,6 +92,7 @@ int main(int argc, char * argv[])
 	benchamkEnabled = FALSE;
 	outputImages = FALSE;
 	impl = IMPL_ASM;
+	char* src_path = "SRC-64.png";
 
 	unsigned char load_bpp = 3;
 
@@ -231,10 +238,17 @@ int main(int argc, char * argv[])
 		}
 	}
 
+	if(cmdOptionExists(argv, argv + argc, "-i"))
+	{
+		src_path = getCmdOption(argv, argv + argc, "-i");
+	}
+
+	printf("%s", src_path);
+
 	// IMAGE LOAD
 	log_info("Starting...\n");
 
-	Image* src = decodePng("SRC.png", load_bpp);
+	Image* src = decodePng(src_path, load_bpp);
 
 	if (src == NULL)
 	{

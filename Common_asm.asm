@@ -162,17 +162,6 @@ performConvolutionStep_1bpp: ;const Image* image, const SquareMatrix* mat, const
 	push r14
 	push r15
 
-	; TEST
-	mov		r14d, ecx
-	imul	r14d, [rdi + IMAGE_OS_WIDTH]
-	add		r14d, edx
-	cmp		r14d, 261
-	je		break
-	jmp		no_break;
-break:
-	nop
-no_break:
-
 	mov r14, r8  ; r14 = dst
 
 	mov r8b, [rsi+MAT_OS_SIZE]
@@ -315,6 +304,19 @@ performConvolutionLine_1bpp: ;float (const char* line, float* matLine, const uns
 	push r15
 
 	mov     r9d, edx		;	r9d = x
+
+	; Correct Line 16-Byte Alignment
+	mov		rax, rdi
+	mov 	edx, 0
+	mov		r8, 16
+	idiv 	r8					; eax = line % 16
+
+	and		rdx,	0x0000FFFF	; rdx -> edx
+
+	sub		rdi, rdx
+	add		r9d, edx
+
+
 
 	; correct x to be x - (matSize / 2)
 	mov     r10d, ecx
