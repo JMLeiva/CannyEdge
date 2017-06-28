@@ -94,7 +94,7 @@ int main(int argc, char * argv[])
 	impl = IMPL_ASM;
 	char* src_path = "SRC-64.png";
 
-	unsigned char load_bpp = 3;
+	unsigned char load_bpp = 4;
 
 	bool error = FALSE;
 
@@ -243,8 +243,6 @@ int main(int argc, char * argv[])
 		src_path = getCmdOption(argv, argv + argc, "-i");
 	}
 
-	printf("%s", src_path);
-
 	// IMAGE LOAD
 	log_info("Starting...\n");
 
@@ -301,10 +299,11 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 		break;
 	case IMPL_ASM:
 		//applyGrayscale_c(src, &grayScale);
-		applyGrayscale_asm(src, &grayScale, FALSE);
+		applyGrayscale_asm(src, &grayScale);
 		break;
 	case IMPL_ASM_YMM:
-		applyGrayscale_asm(src, &grayScale, TRUE);
+		// TODO
+		//applyGrayscale_asm(src, &grayScale);
 		break;
 	}
 
@@ -390,7 +389,20 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 		temp_t = rdtsc();
 	}
 
-	applyThresholdLowHigh(&nonMax, minThreshold, maxThreshold, 128, 255, &lowHigh);
+	switch(impl)
+	{
+	case IMPL_C:
+		applyThresholdLowHigh_c(&nonMax, minThreshold, maxThreshold, 128, 255, &lowHigh);
+		break;
+	case IMPL_ASM:
+		applyThresholdLowHigh_asm(&nonMax, minThreshold, maxThreshold, 128, 255, &lowHigh);
+		break;
+	case IMPL_ASM_YMM:
+		// TODO
+		break;
+	}
+
+
 
 	if (benchamkEnabled)
 	{

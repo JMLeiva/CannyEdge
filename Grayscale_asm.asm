@@ -1,5 +1,5 @@
 default rel
-global applyGrayscale_asm
+global applyGrayscale_asm_impl
 
 extern malloc
 extern free
@@ -36,11 +36,10 @@ section .data
 
 section .text
 
-applyGrayscale_asm: ;(const Image* src, Image* dst)
+applyGrayscale_asm_impl: ;(const Image* src, Image* dst)
 	; PREPARE STACK
 	push rbp
 	mov rbp, rsp
-	sub rsp, 24
 	push rbx
 	push r12
 	push r13
@@ -111,7 +110,6 @@ endLoop:
 	pop	r13
 	pop	r12
 	pop rbx
-	add rsp, 24
 	pop rbp
 
 	ret			; return

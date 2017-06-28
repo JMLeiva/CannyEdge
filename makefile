@@ -16,7 +16,7 @@ LODEDIR = lodepng
 OUTPUT = CannyEdge
 DEPS = $(IDIR)/*.h
 OBJ = CannyEdge.o Common.o GaussBlur.o Grayscale.o Log.o NonMaxSuppression.o SobelOperator.o Threshold.o Utils.o lodepng.o \
-	  Common_asm.o  Grayscale_asm.o
+	  Common_asm.o  Grayscale_asm.o Threshold_asm.o
 
 
 %.o: %.c $(DEPS)
