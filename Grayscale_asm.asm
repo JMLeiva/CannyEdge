@@ -217,6 +217,13 @@ loop_bpp4:												;for (unsigned int i = 0; i < size; i += src->bpp * 4)
 	divps xmm3, xmm0
 	divps xmm4, xmm0
 
+	;SUM
+	;haddps xmm1, xmm2
+	;haddps xmm3, xmm4
+
+	;haddps xmm1, xmm3
+	;haddps xmm5, xmm5
+
 	; RECONVERT TO INT
 	cvtps2dq xmm1, xmm1
 	cvtps2dq xmm2, xmm2
@@ -227,7 +234,6 @@ loop_bpp4:												;for (unsigned int i = 0; i < size; i += src->bpp * 4)
 	phaddd xmm3, xmm4
 
 	phaddd xmm1, xmm3
-	phaddd xmm5, xmm5
 
 	pshufb xmm1, [shufle_repack_1] ;REPACK 4 pixels
 

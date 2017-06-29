@@ -91,7 +91,7 @@ int main(int argc, char * argv[])
 
 	benchamkEnabled = FALSE;
 	outputImages = FALSE;
-	impl = IMPL_ASM;
+	impl = IMPL_C;
 	char* src_path = "SRC-64.png";
 
 	unsigned char load_bpp = 4;

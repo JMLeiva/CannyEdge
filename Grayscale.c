@@ -10,16 +10,22 @@ void applyGrayscale_c(const Image* src, Image* dst)
 	unsigned int grayIndex = 0;
 	unsigned short val = 0;
 
+	unsigned short colorChannels = src->bpp;
+	if(colorChannels > 3)
+	{
+		colorChannels = 3;
+	}
+
 	for (unsigned int i = 0; i < src->width * src->height * src->bpp; i += src->bpp)
 	{
 		val = 0;
 
-		for (unsigned char b = 0; b < src->bpp && b < 3; b++)
+		for (unsigned char b = 0; b < colorChannels; b++)
 		{
 			val += src->data[i + b];
 		}
 
-		newData[grayIndex] = val / src->bpp;
+		newData[grayIndex] = val / colorChannels;
 		grayIndex++;
 	}
 
