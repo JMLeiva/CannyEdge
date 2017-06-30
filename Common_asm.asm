@@ -300,10 +300,11 @@ performConvolutionLine_1bpp: ;float (const char* line, float* matLine, const uns
 	mov     r9d, edx		;	r9d = x
 
 	; Correct Line 16-Byte Alignment
-	;mov		rax, rdi
-	;mov 	edx, 0
-	;mov		r8, 16
-	;idiv 	r8					; eax = line % 16
+		;mov		rax, rdi
+		;mov 	edx, 0
+		;mov		r8, 16
+		;idiv 	r8					; eax = line % 16
+	;; OPTIMIZATION
 	mov	 rdx,	rdi
 	and	 rdx,	0x0F			; eax = line % 16
 
@@ -321,21 +322,34 @@ performConvolutionLine_1bpp: ;float (const char* line, float* matLine, const uns
 	sub		r9d,  r10d		; r9d = x - matSize / 2
 
 	; Calculate x_aligned
-	mov 	eax, r9d
-	mov 	edx, 0
-	mov		r8, 16
-	idiv 	r8				;	eax = x / 16 |||| edx = x % 16
-	sal		eax, 4			;   eax = x * 16 (aligned)
+		;mov 	eax, r9d
+		;mov 	edx, 0
+		;mov	r8, 16
+		;idiv 	r8				;	eax = x / 16 |||| edx = x % 16
+		;sal	eax, 4			;   eax = x * 16 (aligned)
+	;; OPTIMIZATION
+	mov	edx,	r9d
+	mov	eax,	r9d
+	and	edx,	0x0F
+	and	eax,	0xFFFFFFF0	; eax / 16  then eax * 16
+
 	xor		r10,  r10
 	mov		r10d, eax		;	r10d = x_aligned
 
 	mov 	r12d, edx		;	r12d = x % 16
 
 ; Calculate number of sections
-	mov 	eax, ecx		;	eax = matSize
-	mov 	edx, 0
-	mov		r8, 4
-	idiv 	r8				;	eax = matSize / 4 |||| edx = matSize % 4
+		;mov 	eax, ecx		;	eax = matSize
+		;mov 	edx, 0
+		;mov		r8, 4
+		;idiv 	r8				;	eax = matSize / 4 |||| edx = matSize % 4
+	;; OPTIMIZATION
+	mov	eax, ecx
+	sar eax, 2					; 	eax = matSize / 4
+	mov	edx, ecx
+	and	edx, 0x03
+
+
 	inc		eax				;	eax = nSections
 
 	mov     r14d, edx		;   r14d = matSize % 4
