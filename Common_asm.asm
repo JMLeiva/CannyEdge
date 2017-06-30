@@ -214,15 +214,12 @@ performConvolutionStep_1bpp: ;const Image* image, const SquareMatrix* mat, const
 	mov  	rsi, [rsi]
 
 	; result is stored in xmm1
-	pxor xmm1, xmm1
+	pxor xmm8, xmm8
 
 
 convolution_line_loop:
 	cmp r9d, r8d
 	je 	end_convolution_line_loop
-
-	; store result int r12d
-	movd r12d, xmm1
 
 	push r8
 	push r9
@@ -238,10 +235,7 @@ convolution_line_loop:
 	; ecx = matSize
 	call performConvolutionLine_1bpp ;(const char* line, float* matLine, const unsigned int x, int matSize)
 
-	; restore result
-	movd xmm1, r12d
-
-	addss xmm1, xmm0
+	addss xmm8, xmm0
 
 	pop rcx
 	pop rdx
@@ -258,7 +252,7 @@ convolution_line_loop:
 end_convolution_line_loop:
 
 	; cvt result to integer
-	cvtss2si eax, xmm1
+	cvtss2si eax, xmm8
 
 	; result is a short, must convert to it. If its positive, do nothing. If its negative, must add sign
 	cmp eax, 0
@@ -306,10 +300,13 @@ performConvolutionLine_1bpp: ;float (const char* line, float* matLine, const uns
 	mov     r9d, edx		;	r9d = x
 
 	; Correct Line 16-Byte Alignment
-	mov		rax, rdi
-	mov 	edx, 0
-	mov		r8, 16
-	idiv 	r8					; eax = line % 16
+	;mov		rax, rdi
+	;mov 	edx, 0
+	;mov		r8, 16
+	;idiv 	r8					; eax = line % 16
+	mov	 rdx,	rdi
+	and	 rdx,	0x0F			; eax = line % 16
+
 
 	and		rdx,	0x0000FFFF	; rdx -> edx
 
@@ -377,12 +374,6 @@ line_aligned:
 
 line_unaligned:
 line_unaligned_loop:
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; THIS IS TOO SLOW
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;psrldq xmm2, 1	;align (psrldq can only be used with imm8, not registers)
-	;loop line_unaligned_loop
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	call shift_xmm2_right
 
 check_double_line:
@@ -412,22 +403,10 @@ check_double_line:
 
 
 line_unaligned_loop_2_left:
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; THIS IS TOO SLOW
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;pslldq xmm3, 1	;inverse align (psrldq can only be used with imm8, not registers)
-	;loop line_unaligned_loop_2_left
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	call shift_xmm3_left
 	jmp  line_unaligned_loop_2_end
 
 line_unaligned_loop_2_right:
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; THIS IS TOO SLOW
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;psrldq xmm3, 1	;inverse align (psrldq can only be used with imm8, not registers)
-	;loop line_unaligned_loop_2_right
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	call shift_xmm3_right
 
 line_unaligned_loop_2_end:

@@ -85,28 +85,26 @@ applyThresholdLowHigh_asm_impl_1bpp: ;(const Image* src, const unsigned char thr
 	and  r8d, 	0x000000FF
 
 	pxor xmm0, 	xmm0
-	movd xmm0, 	esi		; < thres low
-
-	pxor xmm1,  xmm1	; < thres high
+	pxor xmm1,  xmm1		; < thres high
+	pxor xmm2, 	xmm2		; < val low
+	pxor xmm3, 	xmm3		; < val high
+	movd xmm0, 	esi			; < thres low
 	movd xmm1, 	edx
-
-	pxor xmm2, xmm2		; < val low
 	movd xmm2, ecx
-
-	pxor xmm3, xmm3		; < val high
 	movd xmm3, r8d
 
 	movdqa xmm4, [shuffle_rep_byte_to_8_words]		; <- all zeros, fill with first 8bits
 	pshufb xmm0, xmm4
 	pshufb xmm1, xmm4
+	mov r10d, 0
 	pshufb xmm2, xmm4
+	mov rdi, [rdi + IMAGE_OS_DATA]
 	pshufb xmm3, xmm4
 
-	mov r10d, 0
+
 
 	movdqa xmm4, [all_ones_128]
 
-	mov rdi, [rdi + IMAGE_OS_DATA]
 loop:
 	add r10d, 16
 	cmp r10d, r11d
