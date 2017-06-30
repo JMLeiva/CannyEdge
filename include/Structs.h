@@ -4,6 +4,8 @@
 #define FALSE 0
 #define TRUE 1
 
+#include <stdint.h>
+
 typedef char bool;
 
 typedef struct
@@ -35,5 +37,11 @@ typedef struct
 	unsigned short height;
 	unsigned int* data;
 } UI_Matrix;
+
+typedef struct
+{
+	uint64_t grayscale_t, gauss_t, sobel_t, nonMax_t, lowHigh_t, hysteresis_t;
+	bool valid;
+} Benchmark;
 
 #endif // !STRUCTS_H

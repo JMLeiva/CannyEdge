@@ -13,16 +13,21 @@
 #include "include/Structs.h"
 #include "include/Log.h"
 #include <string.h>
+#include <math.h>
 
 #define IMPL_C 0
 #define IMPL_ASM 1
 #define IMPL_ASM_YMM 2
 
-bool benchamkEnabled;
+bool benchmarkEnabled;
 bool outputImages;
 unsigned char impl;
 
-void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, unsigned char minThreshold, unsigned char maxThreshold);
+uint64_t getBenchmarkTotal(Benchmark* benchmark);
+uint64_t getMean(Benchmark* benchmarkList, unsigned int size);
+double getStdDeviation(Benchmark* benchmarkList, unsigned int size, uint64_t mean);
+
+void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, unsigned char minThreshold, unsigned char maxThreshold, Benchmark* benchmark);
 Image* decodePng(const char* filename, unsigned char bpp);
 void encodePng(const char* filename, Image* image);
 
@@ -76,7 +81,8 @@ bool cmdOptionExists(char** begin, char** end, const char* option)
 }
 
 
-uint64_t grayscale_t = 0, gauss_t = 0, sobel_t = 0, nonMax_t = 0, lowHigh_t = 0, hysteresis_t = 0;
+
+Benchmark* benchmarkList;
 uint64_t temp_t;
 
 int main(int argc, char * argv[])
@@ -89,7 +95,7 @@ int main(int argc, char * argv[])
 	unsigned char maxThreshold = 120;
 
 
-	benchamkEnabled = FALSE;
+	benchmarkEnabled = TRUE;
 	outputImages = FALSE;
 	impl = IMPL_C;
 	char* src_path = "SRC-64.png";
@@ -211,7 +217,7 @@ int main(int argc, char * argv[])
 	}
 
 	outputImages = cmdOptionExists(argv, argv + argc, "-oe");
-	benchamkEnabled = cmdOptionExists(argv, argv + argc, "-be");
+	benchmarkEnabled = cmdOptionExists(argv, argv + argc, "-be");
 
 	if (cmdOptionExists(argv, argv + argc, "-impl"))
 	{
@@ -256,9 +262,15 @@ int main(int argc, char * argv[])
 	log_info("Image loaded successfully\n");
 	log_info("Starting Processing %d times\n", times);
 
+
+	if(benchmarkEnabled)
+	{
+		benchmarkList = (Benchmark*)malloc(times * sizeof(Benchmark));
+	}
+
 	for (unsigned int i = 0; i < times; i++)
 	{
-		applyCanny(src, gaussRadius, gaussSigma, minThreshold, maxThreshold);
+		applyCanny(src, gaussRadius, gaussSigma, minThreshold, maxThreshold, &benchmarkList[i]);
 		log_info_flush(".");
 	}
 
@@ -266,28 +278,93 @@ int main(int argc, char * argv[])
 	free(src->data);
 	free(src);
 
-	if (benchamkEnabled)
+
+
+	if (benchmarkEnabled)
 	{
-		log_info("Grayscale	Time %lld \n", grayscale_t / times);
-		log_info("Gauss Blur	Time %lld \n", gauss_t / times);
-		log_info("Sobel		Time %lld \n", sobel_t / times);
-		log_info("NonMax		Time %lld \n", nonMax_t / times);
-		log_info("LowHigh		Time %lld \n", lowHigh_t / times);
-		log_info("Hysteresis	Time %lld \n", hysteresis_t / times);
-		log_info("\nTotal: %lld \n", (grayscale_t + gauss_t + sobel_t + nonMax_t + lowHigh_t + hysteresis_t) / times);
+		for(unsigned int i = 0; i < times; i++)
+		{
+			benchmarkList[i].valid = TRUE;
+		}
+
+		uint64_t mean = getMean(benchmarkList, times);
+		double stdDeviation = getStdDeviation(benchmarkList, times, mean);
+
+		// Remove ouliers
+		for(unsigned int i = 0; i < times; i++)
+		{
+			uint64_t total = getBenchmarkTotal(&benchmarkList[i]);
+
+			if(abs(total - mean) > 2*stdDeviation)
+			{
+				benchmarkList[i].valid = FALSE;
+			}
+		}
+
+		//RECALCULATE ALL
+		mean = getMean(benchmarkList, times);
+		stdDeviation = getStdDeviation(benchmarkList, times, mean);
+
+		// Get sub values
+		Benchmark mixedBenchmark;
+		mixedBenchmark.gauss_t = 0;
+		mixedBenchmark.grayscale_t = 0;
+		mixedBenchmark.hysteresis_t = 0;
+		mixedBenchmark.lowHigh_t = 0;
+		mixedBenchmark.nonMax_t = 0;
+		mixedBenchmark.sobel_t = 0;
+		mixedBenchmark.valid = TRUE;
+
+
+		unsigned int outliers = 0;
+		unsigned int realTimes = times;
+
+		for(unsigned int i = 0; i < times; i++)
+		{
+			if(!benchmarkList[i].valid)
+			{
+				outliers++;
+				realTimes--;
+				continue;
+			}
+
+			mixedBenchmark.gauss_t += benchmarkList[i].gauss_t;
+			mixedBenchmark.grayscale_t += benchmarkList[i].grayscale_t;
+			mixedBenchmark.hysteresis_t += benchmarkList[i].hysteresis_t;
+			mixedBenchmark.lowHigh_t += benchmarkList[i].lowHigh_t;
+			mixedBenchmark.nonMax_t += benchmarkList[i].nonMax_t;
+			mixedBenchmark.sobel_t += benchmarkList[i].sobel_t;
+		}
+
+		mixedBenchmark.gauss_t /= realTimes;
+		mixedBenchmark.grayscale_t /= realTimes;
+		mixedBenchmark.hysteresis_t /= realTimes;
+		mixedBenchmark.lowHigh_t /= realTimes;
+		mixedBenchmark.nonMax_t /= realTimes;
+		mixedBenchmark.sobel_t /= realTimes;
+
+		log_info("Grayscale	Time %lld \n", 		mixedBenchmark.grayscale_t);
+		log_info("Gauss Blur	Time %lld \n", 	mixedBenchmark.gauss_t);
+		log_info("Sobel		Time %lld \n", 		mixedBenchmark.sobel_t);
+		log_info("NonMax		Time %lld \n", 	mixedBenchmark.nonMax_t);
+		log_info("LowHigh		Time %lld \n", 	mixedBenchmark.lowHigh_t);
+		log_info("Hysteresis	Time %lld \n", 	mixedBenchmark.hysteresis_t);
+		log_info("\nTotal: 		%lld \n", mean);
+		log_info("\nDeviation:	%f (%.02f%)\n", stdDeviation, (stdDeviation / mean) * 100);
+		log_info("\Outliers:	%d (%.02f%)\n", outliers, ((float)outliers / times) * 100);
 	}
 
 	log_info("COMPLTED\n\n");
 }
 
-void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, unsigned char minThreshold, unsigned char maxThreshold)
+void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, unsigned char minThreshold, unsigned char maxThreshold, Benchmark* benchmark)
 {
 	Image grayScale, gauss, sobelLum, sobelAngle, nonMax, lowHigh, hysteresis;
 
 
 	// GRAYSCALE
 
-	if (benchamkEnabled)
+	if (benchmarkEnabled)
 	{
 		temp_t = rdtsc();
 	}
@@ -307,15 +384,15 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 		break;
 	}
 
-	if (benchamkEnabled)
+	if (benchmarkEnabled)
 	{
-		grayscale_t += rdtsc() - temp_t;
+		benchmark->grayscale_t = rdtsc() - temp_t;
 	}
 
 	log_verbose("Grayscale completed\n");
 
 	// GAUSS BLUR
-	if (benchamkEnabled)
+	if (benchmarkEnabled)
 	{
 		temp_t = rdtsc();
 	}
@@ -334,15 +411,15 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 	}
 
 
-	if (benchamkEnabled)
+	if (benchmarkEnabled)
 	{
-		gauss_t += rdtsc() - temp_t;
+		benchmark->gauss_t = rdtsc() - temp_t;
 	}
 
 	log_verbose("Gauss Blur completed\n");
 
 	// SOBEL
-	if (benchamkEnabled)
+	if (benchmarkEnabled)
 	{
 		temp_t = rdtsc();
 	}
@@ -361,30 +438,30 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 	}
 
 
-	if (benchamkEnabled)
+	if (benchmarkEnabled)
 	{
-		sobel_t += rdtsc() - temp_t;
+		benchmark->sobel_t = rdtsc() - temp_t;
 	}
 
 	log_verbose("Sobel Operator completed\n");
 
 	// NONMAX SUPRESSION
-	if (benchamkEnabled)
+	if (benchmarkEnabled)
 	{
 		temp_t = rdtsc();
 	}
 
 	applyNonMaxSuppression(&sobelLum, &sobelAngle, &nonMax);
 
-	if (benchamkEnabled)
+	if (benchmarkEnabled)
 	{
-		nonMax_t += rdtsc() - temp_t;
+		benchmark->nonMax_t = rdtsc() - temp_t;
 	}
 
 	log_verbose("NonMax Supression completed\n");
 
 	// LOWHIGH THRESSHOLD
-	if (benchamkEnabled)
+	if (benchmarkEnabled)
 	{
 		temp_t = rdtsc();
 	}
@@ -404,24 +481,24 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 
 
 
-	if (benchamkEnabled)
+	if (benchmarkEnabled)
 	{
-		lowHigh_t += rdtsc() - temp_t;
+		benchmark->lowHigh_t = rdtsc() - temp_t;
 	}
 
 	log_verbose("LowHigh Thresshold completed\n");
 
 	// HYSTERESIS
-	if (benchamkEnabled)
+	if (benchmarkEnabled)
 	{
 		temp_t = rdtsc();
 	}
 
 	applyHysteresisThreshold(&lowHigh, &hysteresis);
 
-	if (benchamkEnabled)
+	if (benchmarkEnabled)
 	{
-		hysteresis_t += rdtsc() - temp_t;
+		benchmark->hysteresis_t = rdtsc() - temp_t;
 	}
 
 	log_verbose("Hysteresis completed\n");
@@ -533,3 +610,56 @@ void encodePng(const char* filename, Image* image)
 	if (error) printf("error %u: %s\n", error, lodepng_error_text(error));
 }
 
+uint64_t getBenchmarkTotal(Benchmark* benchmark)
+{
+	return benchmark->gauss_t + benchmark->grayscale_t + benchmark->hysteresis_t + benchmark->lowHigh_t + benchmark->nonMax_t + benchmark->sobel_t;
+}
+
+uint64_t getMean(Benchmark* benchmarkList, unsigned int size)
+{
+	uint64_t result = 0;
+	unsigned int validSize = size;
+	// Calculate Mean
+	for(unsigned int i = 0; i < size; i++)
+	{
+		if(!benchmarkList[i].valid)
+		{
+			validSize--;
+			continue;
+		}
+		result += getBenchmarkTotal(&benchmarkList[i]);
+	}
+
+	result /= validSize;
+
+	return result;
+}
+
+
+double getStdDeviation(Benchmark* benchmarkList, unsigned int size, uint64_t mean)
+{
+	uint64_t stdDeviation_acc = 0;
+	double result = 0;
+	unsigned int validSize = size;
+	// Calculate Std deviaton
+	for(unsigned int i = 0; i < size; i++)
+	{
+		if(!benchmarkList[i].valid)
+		{
+			validSize--;
+			continue;
+		}
+
+		uint64_t total = getBenchmarkTotal(&benchmarkList[i]);
+
+		uint64_t squaredDiff = total - mean;
+		squaredDiff *= squaredDiff;
+
+		stdDeviation_acc += squaredDiff;
+	}
+
+	result = (double)stdDeviation_acc / validSize;
+	result = sqrt(result);
+
+	return result;
+}

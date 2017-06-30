@@ -10,7 +10,7 @@ endif
 ASMFLAGS = $(ASMFLAGS64)
 
 CC=gcc
-CFLAGS=-std=c99 -lm -ggdb -Wall -Wextra -pedantic -m64 -O0
+CFLAGS=-std=c99 -lm -ggdb -Wall -Wextra -pedantic -m64 -O3
 IDIR = include
 LODEDIR = lodepng
 OUTPUT = CannyEdge
