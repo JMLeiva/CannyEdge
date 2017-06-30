@@ -52,7 +52,7 @@ applyGrayscale_asm_impl: ;(const Image* src, Image* dst)
 	imul ecx, [rdi+IMAGE_OS_BPP]						;ecx = src->width * src->height * src->bpp * src->bpp
 
 	; MALLOC CALL
-	push rdi
+
 	push rsi
 	push rcx
 
@@ -176,7 +176,7 @@ loop_bpp3:													;for (unsigned int i = 0; i < size; i += src->bpp * 4)
 	add r12, 4
 	movd r15d, xmm5
 	mov[r12], r15b
-	add r12, 1
+	inc r12
 
 	add r11d, 15
 

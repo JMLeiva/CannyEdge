@@ -131,10 +131,10 @@ loop_x:				;for (x = 0; x < src->width; x++)
 	pop rax
 
 	add r12, 2
-	add r11d, 1
+	inc r11d
 	jmp loop_x
 end_loop_x:
-	add r10d, 1
+	inc r10d
 	jmp loop_y
 end_loop_y:
 
@@ -171,7 +171,7 @@ performConvolutionStep_1bpp: ;const Image* image, const SquareMatrix* mat, const
 
 	mov r15d, r8d		; r15d = matSize
 	sar r15d, 2			; r15d = matSize / 4
-	add r15d, 1			; r15d = (matSize / 4) + 1
+	inc r15d			; r15d = (matSize / 4) + 1
 	sal r15d, 4			; r15d = ((mSize / 4) + 1) * 16 = matSizeAligned * (sizeOf(float));
 
 	mov eax, r15d
@@ -253,7 +253,7 @@ convolution_line_loop:
 
 	add rsi, r15	;	matLine + alignedSize * sizeof(float)
 	add	rdi, r11	;	srcLine + src->width
-	add r9d, 1
+	inc r9d
 	jmp convolution_line_loop
 end_convolution_line_loop:
 
