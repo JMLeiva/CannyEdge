@@ -424,7 +424,7 @@ line_unaligned_loop_2_right:
 	call shift_xmm3_right
 
 line_unaligned_loop_2_end:
-	por xmm2, xmm3 ; -< Esto esta mal
+	por xmm2, xmm3 ;
 
 continue_line:
 
@@ -464,19 +464,24 @@ continue_overflow_data:
 
 	; Multiply and sum
 	mulps  	xmm1, xmm2
-	movdqa	xmm2, xmm1
-	movdqa  xmm3, xmm1
-	movdqa  xmm4, xmm1
 
-	; TODO usar HADDPS
+	;; OPTMIZATION
+	haddps	xmm1, xmm1
+	haddps	xmm1, xmm1
 
-	pshufb  xmm2, [shuffle_get_2nd_float]
-	pshufb  xmm3, [shuffle_get_3rd_float]
-	pshufb  xmm4, [shuffle_get_4th_float]
+		;	movdqa	xmm2, xmm1
+		;	movdqa  xmm3, xmm1
+		;	movdqa  xmm4, xmm1
 
-	addss   xmm1, xmm2
-	addss   xmm1, xmm3
-	addss	xmm1, xmm4
+
+
+		;	pshufb  xmm2, [shuffle_get_2nd_float]
+		;	pshufb  xmm3, [shuffle_get_3rd_float]
+		;	pshufb  xmm4, [shuffle_get_4th_float]
+
+		;	addss   xmm1, xmm2
+		;	addss   xmm1, xmm3
+		;	addss	xmm1, xmm4
 
 	; Add to result
 	addss	xmm0, xmm1
