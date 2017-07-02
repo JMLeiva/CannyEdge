@@ -13,7 +13,7 @@ extern malloc
 	%define VAR_OFFSET_Y			4
 
 
-section .data
+section .rodata
 	align 16
 	shuffle_packed_4_byte_to_float:			DB 0x00,0x80,0x80,0x80,		0x01,0x80,0x80,0x80,	0x02,0x80,0x80,0x80,	0x03,0x80,0x80,0x80
 
@@ -169,16 +169,13 @@ performConvolutionStep_1bpp: ;const Image* image, const SquareMatrix* mat, const
 
 	mov r9d, 0
 
+	xor	r15, r15
 	mov r15d, r8d		; r15d = matSize
 	sar r15d, 2			; r15d = matSize / 4
 	inc r15d			; r15d = (matSize / 4) + 1
 	sal r15d, 4			; r15d = ((mSize / 4) + 1) * 16 = matSizeAligned * (sizeOf(float));
 
-	mov eax, r15d
-	mov r12d, edx
-	cdq					; this shit writes edx
-	mov edx, r12d
-	mov r15, rax		; Extend r15d to r15
+	;movsxd	r15, r15d	; Sign extend to r15
 
 	; Calculate end of top line (y - matSize/2)
 	mov r13d, r8d
@@ -188,20 +185,11 @@ performConvolutionStep_1bpp: ;const Image* image, const SquareMatrix* mat, const
 	mov 	r10d, ecx 	;r10d = y
 	sub		r10d, r13d	;r10d = y - matSize/2
 
+	xor		r11,  r11
 	mov		r11d, [rdi+IMAGE_OS_WIDTH]
 	imul 	r10d, r11d	; r10d = y * src->width
 
-	mov eax, r11d
-	mov r12d, edx
-	cdq					; this shit writes edx
-	mov edx, r12d
-	mov r11, rax		; Extend r11d to r11
-
-
-	push r10
-	push rdx
-	push rcx
-	sub rsp, 8
+	;movsxd	r11, r11d	; Sign extend to r15
 
 	mov	ecx, r8d	; restore ecx
 	add rsi, MAT_OS_DATA
@@ -269,12 +257,6 @@ end_cvt_to_short:
 	; Write result (in ax)
 	mov [r14], ax
 
-
-	add rsp, 8
-	pop rcx
-	pop rdx
-	pop r10
-
 	; RESTORE STACK
 	pop	r15
 	pop r14
@@ -305,11 +287,11 @@ performConvolutionLine_1bpp: ;float (const char* line, float* matLine, const uns
 		;mov		r8, 16
 		;idiv 	r8					; eax = line % 16
 	;; OPTIMIZATION
+	xor	 rdx,	rdx
 	mov	 rdx,	rdi
 	and	 rdx,	0x0F			; eax = line % 16
 
-
-	and		rdx,	0x0000FFFF	; rdx -> edx
+	;movsxd	rdx,	edx
 
 	sub		rdi, rdx
 	add		r9d, edx
@@ -330,7 +312,7 @@ performConvolutionLine_1bpp: ;float (const char* line, float* matLine, const uns
 	;; OPTIMIZATION
 	mov	edx,	r9d
 	mov	eax,	r9d
-	and	edx,	0x0F
+	and	edx,	0x0F		; edx = x % 16
 	and	eax,	0xFFFFFFF0	; eax / 16  then eax * 16
 
 	xor		r10,  r10
@@ -345,9 +327,9 @@ performConvolutionLine_1bpp: ;float (const char* line, float* matLine, const uns
 		;idiv 	r8				;	eax = matSize / 4 |||| edx = matSize % 4
 	;; OPTIMIZATION
 	mov	eax, ecx
-	sar eax, 2					; 	eax = matSize / 4
 	mov	edx, ecx
-	and	edx, 0x03
+	sar eax, 2					; 	eax = matSize / 4
+	and	edx, 0x03				;	edx = matSize % 4
 
 
 	inc		eax				;	eax = nSections
@@ -358,10 +340,6 @@ performConvolutionLine_1bpp: ;float (const char* line, float* matLine, const uns
 	mov 	r11d, ecx		;  r11d = matSize
 	add		rdi, r10        ;  alignedLine
 	mov		r8d, 0
-
-	push  rdi
-	push  rsi
-
 
 	mov  r13d, 0 			; r13d = line_x_offset
 
@@ -390,6 +368,8 @@ line_unaligned:
 line_unaligned_loop:
 	call shift_xmm2_right
 
+
+
 check_double_line:
 ; If data is really separated by 16bytes alignment, must do another read, algin and join
 	mov	ecx, r9d 	; x
@@ -399,8 +379,7 @@ check_double_line:
 	cmp ecx, 16		; if(x + matSize > 16) then it is separated
 	jle continue_line
 
-	add		rdi, 16
-	movdqa	xmm3, [rdi] ; <- Second part of line
+	movdqa	xmm3, [rdi+16] ; <- Second part of line
 
 	mov ecx, 16
 	sub ecx, r12d		; Inverse Alignment
@@ -490,9 +469,6 @@ continue_overflow_data:
 
 end_loop_sections:
 
-	pop  rsi
-	pop  rdi
-
 	pop	r15
 	pop r14
 	pop	r13
@@ -505,260 +481,204 @@ end_loop_sections:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SHIFTING FUNCTIONS
 
+section .rodata
+shift_xmm2_right_table:
+	dq	.0, .1, .2, .3, .4, .5, .6, .7, .8, .9, .10, .11, .12, .13, .14, .15
+
+shift_xmm3_right_table:
+	dq	.0, .1, .2, .3, .4, .5, .6, .7, .8, .9, .10, .11, .12, .13, .14, .15
+
+shift_xmm3_left_table:
+	dq	.0, .1, .2, .3, .4, .5, .6, .7, .8, .9, .10, .11, .12, .13, .14, .15
+
+section .text
+
 shift_xmm2_right:	; (ecx times)
-	cmp	ecx, 0
-	je	shift_xmm2_right_0
-	cmp ecx, 1
-	je	shift_xmm2_right_1
-	cmp ecx, 2
-	je	shift_xmm2_right_2
-	cmp ecx, 3
-	je	shift_xmm2_right_3
-	cmp ecx, 4
-	je	shift_xmm2_right_4
-	cmp ecx, 5
-	je	shift_xmm2_right_5
-	cmp ecx, 6
-	je	shift_xmm2_right_6
-	cmp ecx, 7
-	je	shift_xmm2_right_7
-	cmp ecx, 8
-	je	shift_xmm2_right_8
-	cmp ecx, 9
-	je	shift_xmm2_right_9
-	cmp ecx, 10
-	je	shift_xmm2_right_10
-	cmp ecx, 11
-	je	shift_xmm2_right_11
-	cmp ecx, 12
-	je	shift_xmm2_right_12
-	cmp ecx, 13
-	je	shift_xmm2_right_13
-	cmp ecx, 14
-	je	shift_xmm2_right_14
-	cmp ecx, 15
-	je	shift_xmm2_right_15
-	; greater than 16
+	test ecx, 16
+	jnz	default_shift_xmm2_right
+	;cmp ecx, 16
+	;jge	default_shift_xmm2_right
+	mov ecx, 1
+	mov rcx, [shift_xmm2_right_table + ecx * 8]
+	jmp rcx
+
+default_shift_xmm2_right:
 	pxor xmm2, xmm2
 	ret	;
 
-shift_xmm2_right_0:
+
+shift_xmm3_right:	; (ecx times)
+	test ecx, 16
+	jnz default_shift_xmm3_right
+	;cmp ecx, 16
+	;jge	default_shift_xmm3_right
+	mov rcx, [shift_xmm3_right_table + ecx * 8]
+	jmp	rcx
+default_shift_xmm3_right:
+	pxor	xmm3, xmm3
+	ret	;
+
+shift_xmm3_left:	; (ecx times)
+	test ecx, 16
+	jnz	default_shift_xmm3_left
+	;cmp ecx, 16
+	;jge	default_shift_xmm3_left
+	mov rcx, [shift_xmm3_left_table + ecx * 8]
+	jmp	rcx
+default_shift_xmm3_left:
+	pxor	xmm3, xmm3
+	ret	;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; shift_xmm2_right
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+shift_xmm2_right_table.0:
 	ret
-shift_xmm2_right_1:
+shift_xmm2_right_table.1:
 	psrldq xmm2, 1
 	ret
-shift_xmm2_right_2:
+shift_xmm2_right_table.2:
 	psrldq xmm2, 2
 	ret
-shift_xmm2_right_3:
+shift_xmm2_right_table.3:
 	psrldq xmm2, 3
 	ret
-shift_xmm2_right_4:
+shift_xmm2_right_table.4:
 	psrldq xmm2, 4
 	ret
-shift_xmm2_right_5:
+shift_xmm2_right_table.5:
 	psrldq xmm2, 5
 	ret
-shift_xmm2_right_6:
+shift_xmm2_right_table.6:
 	psrldq xmm2, 6
 	ret
-shift_xmm2_right_7:
+shift_xmm2_right_table.7:
 	psrldq xmm2, 7
 	ret
-shift_xmm2_right_8:
+shift_xmm2_right_table.8:
 	psrldq xmm2, 8
 	ret
-shift_xmm2_right_9:
+shift_xmm2_right_table.9:
 	psrldq xmm2, 9
 	ret
-shift_xmm2_right_10:
+shift_xmm2_right_table.10:
 	psrldq xmm2, 10
 	ret
-shift_xmm2_right_11:
+shift_xmm2_right_table.11:
 	psrldq xmm2, 11
 	ret
-shift_xmm2_right_12:
+shift_xmm2_right_table.12:
 	psrldq xmm2, 12
 	ret
-shift_xmm2_right_13:
+shift_xmm2_right_table.13:
 	psrldq xmm2, 13
 	ret
-shift_xmm2_right_14:
+shift_xmm2_right_table.14:
 	psrldq xmm2, 14
 	ret
-shift_xmm2_right_15:
+shift_xmm2_right_table.15:
 	psrldq xmm2, 15
 	ret
 
-
-
-
-shift_xmm3_right:	; (ecx times)
-	cmp	ecx, 0
-	je	shift_xmm3_right_0
-	cmp ecx, 1
-	je	shift_xmm3_right_1
-	cmp ecx, 2
-	je	shift_xmm3_right_2
-	cmp ecx, 3
-	je	shift_xmm3_right_3
-	cmp ecx, 4
-	je	shift_xmm3_right_4
-	cmp ecx, 5
-	je	shift_xmm3_right_5
-	cmp ecx, 6
-	je	shift_xmm3_right_6
-	cmp ecx, 7
-	je	shift_xmm3_right_7
-	cmp ecx, 8
-	je	shift_xmm3_right_8
-	cmp ecx, 9
-	je	shift_xmm3_right_9
-	cmp ecx, 10
-	je	shift_xmm3_right_10
-	cmp ecx, 11
-	je	shift_xmm3_right_11
-	cmp ecx, 12
-	je	shift_xmm3_right_12
-	cmp ecx, 13
-	je	shift_xmm3_right_13
-	cmp ecx, 14
-	je	shift_xmm3_right_14
-	cmp ecx, 15
-	je	shift_xmm3_right_15
-	; greater than 16
-	pxor xmm3, xmm3
-	ret	;
-
-shift_xmm3_right_0:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; shift_xmm3_right
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+shift_xmm3_right_table.0:
 	ret
-shift_xmm3_right_1:
+shift_xmm3_right_table.1:
 	psrldq xmm3, 1
 	ret
-shift_xmm3_right_2:
+shift_xmm3_right_table.2:
 	psrldq xmm3, 2
 	ret
-shift_xmm3_right_3:
+shift_xmm3_right_table.3:
 	psrldq xmm3, 3
 	ret
-shift_xmm3_right_4:
+shift_xmm3_right_table.4:
 	psrldq xmm3, 4
 	ret
-shift_xmm3_right_5:
+shift_xmm3_right_table.5:
 	psrldq xmm3, 5
 	ret
-shift_xmm3_right_6:
+shift_xmm3_right_table.6:
 	psrldq xmm3, 6
 	ret
-shift_xmm3_right_7:
+shift_xmm3_right_table.7:
 	psrldq xmm3, 7
 	ret
-shift_xmm3_right_8:
+shift_xmm3_right_table.8:
 	psrldq xmm3, 8
 	ret
-shift_xmm3_right_9:
+shift_xmm3_right_table.9:
 	psrldq xmm3, 9
 	ret
-shift_xmm3_right_10:
+shift_xmm3_right_table.10:
 	psrldq xmm3, 10
 	ret
-shift_xmm3_right_11:
+shift_xmm3_right_table.11:
 	psrldq xmm3, 11
 	ret
-shift_xmm3_right_12:
+shift_xmm3_right_table.12:
 	psrldq xmm3, 12
 	ret
-shift_xmm3_right_13:
+shift_xmm3_right_table.13:
 	psrldq xmm3, 13
 	ret
-shift_xmm3_right_14:
+shift_xmm3_right_table.14:
 	psrldq xmm3, 14
 	ret
-shift_xmm3_right_15:
+shift_xmm3_right_table.15:
 	psrldq xmm3, 15
 	ret
 
-shift_xmm3_left:	; (ecx times)
-	cmp	ecx, 0
-	je	shift_xmm3_left_0
-	cmp ecx, 1
-	je	shift_xmm3_left_1
-	cmp ecx, 2
-	je	shift_xmm3_left_2
-	cmp ecx, 3
-	je	shift_xmm3_left_3
-	cmp ecx, 4
-	je	shift_xmm3_left_4
-	cmp ecx, 5
-	je	shift_xmm3_left_5
-	cmp ecx, 6
-	je	shift_xmm3_left_6
-	cmp ecx, 7
-	je	shift_xmm3_left_7
-	cmp ecx, 8
-	je	shift_xmm3_left_8
-	cmp ecx, 9
-	je	shift_xmm3_left_9
-	cmp ecx, 10
-	je	shift_xmm3_left_10
-	cmp ecx, 11
-	je	shift_xmm3_left_11
-	cmp ecx, 12
-	je	shift_xmm3_left_12
-	cmp ecx, 13
-	je	shift_xmm3_left_13
-	cmp ecx, 14
-	je	shift_xmm3_left_14
-	cmp ecx, 15
-	je	shift_xmm3_left_15
-	; greater than 16
-	pxor xmm3, xmm3
-	ret	;
-
-shift_xmm3_left_0:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; shift_xmm3_left
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+shift_xmm3_left_table.0:
 	ret
-shift_xmm3_left_1:
+shift_xmm3_left_table.1:
 	pslldq xmm3, 1
 	ret
-shift_xmm3_left_2:
+shift_xmm3_left_table.2:
 	pslldq xmm3, 2
 	ret
-shift_xmm3_left_3:
+shift_xmm3_left_table.3:
 	pslldq xmm3, 3
 	ret
-shift_xmm3_left_4:
+shift_xmm3_left_table.4:
 	pslldq xmm3, 4
 	ret
-shift_xmm3_left_5:
+shift_xmm3_left_table.5:
 	pslldq xmm3, 5
 	ret
-shift_xmm3_left_6:
+shift_xmm3_left_table.6:
 	pslldq xmm3, 6
 	ret
-shift_xmm3_left_7:
+shift_xmm3_left_table.7:
 	pslldq xmm3, 7
 	ret
-shift_xmm3_left_8:
+shift_xmm3_left_table.8:
 	pslldq xmm3, 8
 	ret
-shift_xmm3_left_9:
+shift_xmm3_left_table.9:
 	pslldq xmm3, 9
 	ret
-shift_xmm3_left_10:
+shift_xmm3_left_table.10:
 	pslldq xmm3, 10
 	ret
-shift_xmm3_left_11:
+shift_xmm3_left_table.11:
 	pslldq xmm3, 11
 	ret
-shift_xmm3_left_12:
+shift_xmm3_left_table.12:
 	pslldq xmm3, 12
 	ret
-shift_xmm3_left_13:
+shift_xmm3_left_table.13:
 	pslldq xmm3, 13
 	ret
-shift_xmm3_left_14:
+shift_xmm3_left_table.14:
 	pslldq xmm3, 14
 	ret
-shift_xmm3_left_15:
+shift_xmm3_left_table.15:
 	pslldq xmm3, 15
 	ret

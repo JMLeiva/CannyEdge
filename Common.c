@@ -18,6 +18,12 @@ short* convolute_c(const Image* src, const SquareMatrix* mat)
 	{
 		for (x = 0; x < src->width; x++)
 		{
+			if(x == 12 && y == 2)
+			{
+				x++;
+				x--;
+			}
+
 			//srcIndex = (y * src->width + x) * src->bpp;
 
 			performConvolutionStep(src, mat, x, y, newData + srcIndex);
