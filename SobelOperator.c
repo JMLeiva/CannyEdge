@@ -155,6 +155,8 @@ void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
 	free(yResult);
 	free(xMat.data);
 	free(yMat.data);
+	free(xMatBorder.data);
+	free(yMatBorder.data);
 }
 
 Image xSobel_c(const Image* image)

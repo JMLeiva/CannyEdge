@@ -97,6 +97,7 @@ void applyGaussBlur_asm(const Image* src, const unsigned char mSize, const float
 	replaceData(convolutionData, dst);
 	free(convolutionData);
 	free(mat.data);
+	free(matBorder.data);
 }
 
 SquareMatrix getMatrix(const unsigned char mSize, const float sigma)
