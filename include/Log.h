@@ -9,7 +9,7 @@
 #include "Structs.h"
 
 void log_info(const char* format, ...);
-void log_info_flush(const char* format, ...);
+void log_progress(float val);
 void log_verbose(const char* format, ...);
 void log_verbose_flush(const char* format, ...);
 

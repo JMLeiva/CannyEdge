@@ -121,5 +121,5 @@ char isMax(const Image* image, const unsigned int x, const unsigned int y, const
 	unsigned char pC = image->data[iC];
 
 
-	return pB > pA && pB > pC;
+	return pB >= pA && pB >= pC;
 }

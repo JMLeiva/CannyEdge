@@ -15,7 +15,6 @@ SquareMatrix getYMat();
 SquareMatrix getXMatAligned();
 SquareMatrix getYMatAligned();
 
-unsigned char normalizeAngle(const float angle);
 
 void applySobelOperator_c(const Image* src, Image* dstLum, Image* dstAngle)
 {
@@ -129,7 +128,9 @@ void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
 	emptyImageWithFormat(src->width, src->height, src->bpp, dstLum);
 	emptyImageWithFormat(src->width, src->height, src->bpp, dstAngle);
 
-	for (unsigned int i = 0; i < src->width * src->height * src->bpp; i++)
+	apply_sobel_gradient_calculation_1bpp(xResult, yResult, dstLum, dstAngle);
+
+	/*for (unsigned int i = 0; i < src->width * src->height * src->bpp; i++)
 	{
 		for (int c = 0; c < src->bpp; c++)
 		{
@@ -149,7 +150,7 @@ void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
 
 			dstAngle->data[i] = angle;
 		}
-	}
+	}*/
 
 	free(xResult);
 	free(yResult);
@@ -290,7 +291,7 @@ SquareMatrix getYMatAligned()
 	return mat;
 }
 
-unsigned char normalizeAngle(const float angle)
+unsigned char normalizeAngle(const double angle)
 {
 	if (angle > 0)
 	{

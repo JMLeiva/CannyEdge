@@ -271,8 +271,11 @@ int main(int argc, char * argv[])
 	for (unsigned int i = 0; i < times; i++)
 	{
 		applyCanny(src, gaussRadius, gaussSigma, minThreshold, maxThreshold, &benchmarkList[i]);
-		log_info_flush(".");
+		float progress = (float)i / (float)times;
+		log_progress(progress);
 	}
+
+	log_progress(1);
 
 	log_info("\n");
 	free(src->data);
@@ -351,7 +354,7 @@ int main(int argc, char * argv[])
 		log_info("Hysteresis	Time %lld \n", 	mixedBenchmark.hysteresis_t);
 		log_info("\nTotal: 		%lld \n", mean);
 		log_info("\nDeviation:	%f (%.02f%)\n", stdDeviation, (stdDeviation / mean) * 100);
-		log_info("\Outliers:	%d (%.02f%)\n", outliers, ((float)outliers / times) * 100);
+		log_info("\nOutliers:	%d (%.02f%)\n", outliers, ((float)outliers / times) * 100);
 	}
 
 	log_info("COMPLTED\n\n");
@@ -524,23 +527,14 @@ void applyCanny(const Image* src, unsigned char gaussRadius, float gaussSigma, u
 
 		log_verbose("Outputing Steps\n");
 		encodePng("01-Grayscale.png", &grayScale);
-		log_verbose(".");
 		encodePng("02-Gauss.png", &gauss);
-		log_verbose(".");
-		log_verbose(".");
 		encodePng("03A-SobelX.png", &xS);
-		log_verbose(".");
-		log_verbose(".");
 		encodePng("03B-SobelY.png", &yS);
-		log_verbose(".");
 		encodePng("03C-Sobel.png", &sobelLum);
-		log_verbose(".");
+		encodePng("03D-Sobel.png", &sobelAngle);
 		encodePng("04-NonMax.png", &nonMax);
-		log_verbose(".");
 		encodePng("05-LowHigh.png", &lowHigh);
-		log_verbose(".");
 		encodePng("06-Result.png", &hysteresis);
-		log_verbose(".");
 
 		free(xS.data);
 		free(yS.data);

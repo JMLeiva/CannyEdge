@@ -4,6 +4,15 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#define KNRM  "\x1B[0m"
+#define KRED  "\x1B[31m"
+#define KGRN  "\x1B[32m"
+#define KYEL  "\x1B[33m"
+#define KBLU  "\x1B[34m"
+#define KMAG  "\x1B[35m"
+#define KCYN  "\x1B[36m"
+#define KWHT  "\x1B[37m"
+
 void log_info(const char* fmt, ...)
 {
 #if LOG_LEVEL >= LOG_LEVEL_INFO
@@ -16,15 +25,49 @@ void log_info(const char* fmt, ...)
 #endif
 }
 
-void log_info_flush(const char* fmt, ...)
+void log_progress(float val)
 {
 #if LOG_LEVEL >= LOG_LEVEL_INFO
-	va_list argp;
-	va_start(argp, fmt);
 
-	vprintf(fmt, argp);
+	char* progressDecor;
+
+	switch(((int)(val * 100) % 10))
+	{
+	case 0:
+		progressDecor = "Working...";
+		break;
+	case 1:
+		progressDecor = ".Working..";
+		break;
+	case 2:
+		progressDecor = "..Working.";
+		break;
+	case 3:
+		progressDecor = "...Working";
+		break;
+	case 4:
+		progressDecor = "g...Workin";
+		break;
+	case 5:
+		progressDecor = "ng...Worki";
+		break;
+	case 6:
+		progressDecor = "ing...Work";
+		break;
+	case 7:
+		progressDecor = "king...Wor";
+		break;
+	case 8:
+		progressDecor = "rking...Wo";
+		break;
+	case 9:
+		progressDecor = "orking...W";
+		break;
+	}
+
+	printf(" %s%s [ %.02f % ]                   \r", KGRN, progressDecor, val * 100);
+	printf("%s", KNRM);
 	fflush(stdout);
-	va_end(argp);
 #endif
 }
 

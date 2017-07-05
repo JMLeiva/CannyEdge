@@ -494,10 +494,10 @@ shift_xmm3_left_table:
 section .text
 
 shift_xmm2_right:	; (ecx times)
-	test ecx, 0xFFFFFFF0
-	jnz	default_shift_xmm2_right
-	;cmp ecx, 16
-	;jge	default_shift_xmm2_right
+	;test ecx, 0xFFFFFFF0
+	;jnz	default_shift_xmm2_right
+	cmp ecx, 16
+	jge	default_shift_xmm2_right
 	mov rcx, [shift_xmm2_right_table + ecx * 8]
 	jmp rcx
 
@@ -507,10 +507,10 @@ default_shift_xmm2_right:
 
 
 shift_xmm3_right:	; (ecx times)
-	test ecx, 0xFFFFFFF0
-	jnz default_shift_xmm3_right
-	;cmp ecx, 16
-	;jge	default_shift_xmm3_right
+	;test ecx, 0xFFFFFFF0
+	;jnz default_shift_xmm3_right
+	cmp ecx, 16
+	jge	default_shift_xmm3_right
 	mov rcx, [shift_xmm3_right_table + ecx * 8]
 	jmp	rcx
 default_shift_xmm3_right:
@@ -518,10 +518,10 @@ default_shift_xmm3_right:
 	ret	;
 
 shift_xmm3_left:	; (ecx times)
-	test ecx, 0xFFFFFFF0
-	jnz	default_shift_xmm3_left
-	;cmp ecx, 16
-	;jge	default_shift_xmm3_left
+	;test ecx, 0xFFFFFFF0
+	;jnz	default_shift_xmm3_left
+	cmp ecx, 16
+	jge	default_shift_xmm3_left
 	mov rcx, [shift_xmm3_left_table + ecx * 8]
 	jmp	rcx
 default_shift_xmm3_left:
