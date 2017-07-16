@@ -128,9 +128,9 @@ void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
 	emptyImageWithFormat(src->width, src->height, src->bpp, dstLum);
 	emptyImageWithFormat(src->width, src->height, src->bpp, dstAngle);
 
-	apply_sobel_gradient_calculation_1bpp(xResult, yResult, dstLum, dstAngle);
+	//apply_sobel_gradient_calculation_1bpp(xResult, yResult, dstLum, dstAngle);
 
-	/*for (unsigned int i = 0; i < src->width * src->height * src->bpp; i++)
+	for (unsigned int i = 0; i < src->width * src->height * src->bpp; i++)
 	{
 		for (int c = 0; c < src->bpp; c++)
 		{
@@ -150,7 +150,7 @@ void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
 
 			dstAngle->data[i] = angle;
 		}
-	}*/
+	}
 
 	free(xResult);
 	free(yResult);
