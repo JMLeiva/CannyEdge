@@ -1,10 +1,13 @@
 #include "include/NonMaxSuppression.h"
 #include "include/Common.h"
+#include <assert.h>
 
 char isMax(const Image* image, const unsigned int x, const unsigned int y, const unsigned char angle, const unsigned char bOffset);
 
 void applyNonMaxSuppression(const Image* lum, const Image* angle, Image* dst)
 {
+	assert(lum->bpp == 1 && angle->bpp == 1);
+
 	emptyImageWithFormat(lum->width, lum->height, lum->bpp, dst);
 
 	for (unsigned short y = 0; y < lum->height; y++)
@@ -13,7 +16,7 @@ void applyNonMaxSuppression(const Image* lum, const Image* angle, Image* dst)
 		{
 			unsigned int index = (y * lum->width + x) * lum->bpp;
 			
-			for (unsigned char b = 0; b < lum->bpp; b++)
+			/*for (unsigned char b = 0; b < lum->bpp; b++)
 			{
 				if (isMax(lum, x, y, angle->data[index + b], b))
 				{
@@ -23,6 +26,14 @@ void applyNonMaxSuppression(const Image* lum, const Image* angle, Image* dst)
 				{
 					dst->data[index + b] = 0;
 				}
+			}*/
+			if (isMax(lum, x, y, angle->data[index], 0))
+			{
+				dst->data[index] = lum->data[index];
+			}
+			else
+			{
+				dst->data[index] = 0;
 			}
 		}
 	}

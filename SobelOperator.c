@@ -18,6 +18,8 @@ SquareMatrix getYMatAligned();
 
 void applySobelOperator_c(const Image* src, Image* dstLum, Image* dstAngle)
 {
+	assert(src->bpp == 1);
+
 	SquareMatrix xMat = getXMat();
 	SquareMatrix yMat = getYMat();
 
@@ -31,9 +33,9 @@ void applySobelOperator_c(const Image* src, Image* dstLum, Image* dstAngle)
 
 	for (unsigned int i = 0; i < src->width * src->height * src->bpp; i++)
 	{
-		for (int c = 0; c < src->bpp; c++)
-		{
-			float v = abs(xResult[i]) + abs(yResult[i]);//sqrt(xResult.data[i] * xResult.data[i] + yResult.data[i] * yResult.data[i]);
+		//for (int c = 0; c < src->bpp; c++)
+		//{
+			float v = sqrt(xResult[i] * xResult[i] + yResult[i] * yResult[i]); //abs(xResult[i]) + abs(yResult[i]);//
 
 			if(v > 255)
 			{
@@ -47,9 +49,9 @@ void applySobelOperator_c(const Image* src, Image* dstLum, Image* dstAngle)
 			short angle = 0;
 
 			angle = normalizeAngle(atan2f(xResult[i], yResult[i]));
-					
+
 			dstAngle->data[i] = angle;
-		}
+		//}
 	}
 
 	free(xResult);
@@ -60,6 +62,8 @@ void applySobelOperator_c(const Image* src, Image* dstLum, Image* dstAngle)
 
 void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
 {
+	assert(src->bpp == 1);
+
 	SquareMatrix xMat = getXMatAligned();
 	SquareMatrix yMat = getYMatAligned();
 
@@ -82,22 +86,22 @@ void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
 	{
 		for (x = 0; x < xMatBorder.size / 2; x++)
 		{
-			srcIndex = (y * src->width + x) * src->bpp;
+			srcIndex = (y * src->width + x);
 
 			performConvolutionStep(src, &xMatBorder, x, y, xResult + srcIndex);
 			performConvolutionStep(src, &yMatBorder, x, y, yResult + srcIndex);
 
-			srcIndex += src->bpp;
+			srcIndex++;
 		}
 
 		for (x = src->width - xMatBorder.size / 2; x < src->width; x++)
 		{
-			srcIndex = (y * src->width + x) * src->bpp;
+			srcIndex = (y * src->width + x);
 
 			performConvolutionStep(src, &xMatBorder, x, y, xResult + srcIndex);
 			performConvolutionStep(src, &yMatBorder, x, y, yResult + srcIndex);
 
-			srcIndex += src->bpp;
+			srcIndex++;
 		}
 	}
 
@@ -106,22 +110,22 @@ void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
 	{
 		for (y = 0; y < xMatBorder.size / 2; y++)
 		{
-			srcIndex = (y * src->width + x) * src->bpp;
+			srcIndex = (y * src->width + x);
 
 			performConvolutionStep(src, &xMatBorder, x, y, xResult + srcIndex);
 			performConvolutionStep(src, &yMatBorder, x, y, yResult + srcIndex);
 
-			srcIndex += src->bpp;
+			srcIndex++;
 		}
 
 		for (y = src->height - xMatBorder.size / 2; y < src->height; y++)
 		{
-			srcIndex = (y * src->width + x) * src->bpp;
+			srcIndex = (y * src->width + x);
 
 			performConvolutionStep(src, &xMatBorder, x, y, xResult + srcIndex);
 			performConvolutionStep(src, &yMatBorder, x, y, yResult + srcIndex);
 
-			srcIndex += src->bpp;
+			srcIndex++;
 		}
 	}
 
@@ -130,11 +134,12 @@ void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
 
 	//apply_sobel_gradient_calculation_1bpp(xResult, yResult, dstLum, dstAngle);
 
+
 	for (unsigned int i = 0; i < src->width * src->height * src->bpp; i++)
 	{
-		for (int c = 0; c < src->bpp; c++)
-		{
-			float v = abs(xResult[i]) + abs(yResult[i]);//sqrt(xResult.data[i] * xResult.data[i] + yResult.data[i] * yResult.data[i]);
+		//for (int c = 0; c < src->bpp; c++)
+		//{
+			float v = sqrt(xResult[i] * xResult[i] + yResult[i] * yResult[i]); //abs(xResult[i]) + abs(yResult[i]);//
 			if(v > 255)
 			{
 				dstLum->data[i] = 255;
@@ -149,7 +154,7 @@ void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
 			angle = normalizeAngle(atan2f(xResult[i], yResult[i]));
 
 			dstAngle->data[i] = angle;
-		}
+		//}
 	}
 
 	free(xResult);

@@ -6,7 +6,9 @@
 
 short* convolute_c(const Image* src, const SquareMatrix* mat)
 {
-	int dataSize = src->width * src->height * src->bpp;
+	assert(src->bpp == 1);
+
+	int dataSize = src->width * src->height;
 
 	short* newData = (short*)malloc(dataSize * 2);
 
@@ -43,12 +45,16 @@ void performConvolutionStep(const Image* image, const SquareMatrix* mat, const u
 
 	int xOffset, yOffset;
 
-	float* fDst = (float*)malloc(image->bpp * sizeof(float));
+
+	/*float* fDst = (float*)malloc(image->bpp * sizeof(float));
 
 	for (unsigned char i = 0; i < image->bpp; i++)
 	{
 		fDst[(int)i] = 0;
-	}
+	}*/
+
+	float fDst = 0;
+
 
 	for (int my = -mat->size / 2; my <= mat->size / 2; my++)
 	{
@@ -72,34 +78,40 @@ void performConvolutionStep(const Image* image, const SquareMatrix* mat, const u
 				xOffset = mx;
 			}
 
-			srcIndex = ((y + yOffset) * image->width + (x + xOffset)) * image->bpp;
+
+			/*srcIndex = ((y + yOffset) * image->width + (x + xOffset)) * image->bpp;
 
 			float matValue = mat->data[matIndex];
 
 			for (unsigned char i = 0; i < image->bpp; i++)
 			{
 				float delta = image->data[srcIndex + i] * matValue;
-
-				//if (fDst[(int)i] + delta > 255)
-				//{
-				//	fDst[(int)i] = 255;
-				//}
-				//else
-				//{
 				fDst[(int)i] += delta;
-				//}
-			}
+			}*/
+
+
+
+			srcIndex = ((y + yOffset) * image->width + (x + xOffset));
+
+			float matValue = mat->data[matIndex];
+
+			float delta = image->data[srcIndex] * matValue;
+			fDst += delta;
 
 			matIndex++;
 		}
 	}
 
-	for (unsigned char i = 0; i < image->bpp; i++)
+	/*for (unsigned char i = 0; i < image->bpp; i++)
 	{
 		dst[i] = (short)fDst[(int)i];
 	}
 
 	free(fDst);
+
+	*/
+
+	dst[0] = (short)fDst;
 }
 
 void emptyImageWithFormat(const unsigned short width, const unsigned short height, const unsigned char bpp, Image* dst)

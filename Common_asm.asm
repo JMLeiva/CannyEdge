@@ -61,7 +61,7 @@ convolute_asm_1bpp: ; (Image* src, SquareMatrix* mat) (mat is 16bytes aligned ho
 	push rdx
 
 	mov edi, ecx
-	sal edi, 1		;r8d = dataSize * 2
+	sal edi, 1		;edi = dataSize * 2
 
 	call malloc		;short* newData = (short*)malloc(dataSize * 2);
 
@@ -71,8 +71,8 @@ convolute_asm_1bpp: ; (Image* src, SquareMatrix* mat) (mat is 16bytes aligned ho
 	pop rdi
 	add rsp, 8
 
-	mov r8d, [rdi+IMAGE_OS_WIDTH]
-	mov r9d, [rdi+IMAGE_OS_HEIGHT]
+	mov r14d, [rdi+IMAGE_OS_WIDTH]
+	mov r15d, [rdi+IMAGE_OS_HEIGHT]
 
 	xor r13d, r13d
 	mov r13b, [rsi+MAT_OS_SIZE] ; r13 = mat->size
@@ -80,24 +80,24 @@ convolute_asm_1bpp: ; (Image* src, SquareMatrix* mat) (mat is 16bytes aligned ho
 
 	mov r10d, r13d		;y = mat->size / 2
 
+	xor r12, r12	; srcIndex = (y * src->width + x)
+	mov r12d, r10d
+	imul r12d, r14d
+	add r12d, r13d
+	sal r12d, 1
+
 loop_y:				;for (y = 0; y < src->height; y++)
 	add r10d, r13d
-	cmp r10d, r9d
+	cmp r10d, r15d
 	je	end_loop_y
 	sub r10d, r13d
 
-	xor r11d, r11d
+	;xor r11d, r11d
 	mov r11d, r13d	;x = mat->size / 2
-
-	xor r12, r12	; srcIndex = (y * src->width + x)
-	mov r12d, r10d
-	imul r12d, r8d
-	add r12d, r11d
-	sal r12d, 1		; is a short array, index must be multiplied by 2
 
 loop_x:				;for (x = 0; x < src->width; x++)
 	add r11d, r13d
-	cmp r11d, r8d
+	cmp r11d, r14d
 	jg	end_loop_x
 	sub r11d, r13d
 
@@ -106,8 +106,6 @@ loop_x:				;for (x = 0; x < src->width; x++)
 	push rsi
 	push rcx
 	push rdx
-	push r8
-	push r9
 	push r10
 	push r11
 
@@ -115,6 +113,7 @@ loop_x:				;for (x = 0; x < src->width; x++)
 	; rsi = mat
 	mov edx, r11d ;x
 	mov ecx, r10d ;y
+	;lea r8, [rax+r12]
 	mov r8,	 rax
 	add r8,  r12 ;newData + srcIndex
 
@@ -122,8 +121,6 @@ loop_x:				;for (x = 0; x < src->width; x++)
 
 	pop r11
 	pop r10
-	pop r9
-	pop r8
 	pop rdx
 	pop rcx
 	pop rsi
@@ -135,6 +132,12 @@ loop_x:				;for (x = 0; x < src->width; x++)
 	jmp loop_x
 end_loop_x:
 	inc r10d
+	sub r12, 2
+
+	add r12d, r13d
+	add r12d, r13d
+	add r12d, r13d
+	add r12d, r13d
 	jmp loop_y
 end_loop_y:
 
@@ -191,12 +194,12 @@ performConvolutionStep_1bpp: ;const Image* image, const SquareMatrix* mat, const
 
 	;movsxd	r11, r11d	; Sign extend to r15
 
-	mov	ecx, r8d	; restore ecx
+	 mov	ecx, r8d	; restore ecx
 	add rsi, MAT_OS_DATA
 
 	; Set up Src and Mat Pointers
-	add		rdi, IMAGE_OS_DATA
-	mov  	rdi, [rdi]
+	;add		rdi, IMAGE_OS_DATA
+	mov  	rdi, [rdi+IMAGE_OS_DATA]
 	add		rdi, r10	; rdi = startOfLine
 
 	mov  	rsi, [rsi]
@@ -245,11 +248,10 @@ end_convolution_line_loop:
 	; result is a short, must convert to it. If its positive, do nothing. If its negative, must add sign
 	cmp eax, 0
 	jge end_cvt_to_short
-	jmp cvt_to_short_negative
 
 cvt_to_short_negative:
 	mov ecx, eax
-	mov eax, 0
+	xor eax, eax
 	add ax, cx
 
 end_cvt_to_short:
@@ -279,70 +281,28 @@ performConvolutionLine_1bpp: ;float (const char* line, float* matLine, const uns
 	push r14
 	push r15
 
-	mov     r9d, edx		;	r9d = x
 
-	; Correct Line 16-Byte Alignment
-		;mov		rax, rdi
-		;mov 	edx, 0
-		;mov		r8, 16
-		;idiv 	r8					; eax = line % 16
-	;; OPTIMIZATION
-	xor	 rdx,	rdx
-	mov	 rdx,	rdi
-	and	 rdx,	0x0F			; eax = line % 16
+	xor 	r8d, 	r8d
+	xor  	r13d, 	r13d
 
-	;movsxd	rdx,	edx
-
-	sub		rdi, rdx
-	add		r9d, edx
-
-
-
-	; correct x to be x - (matSize / 2)
-	mov     r10d, ecx
-	sar     r10d, 1			; r10d = matSize / 2
-	sub		r9d,  r10d		; r9d = x - matSize / 2
-
-	; Calculate x_aligned
-		;mov 	eax, r9d
-		;mov 	edx, 0
-		;mov	r8, 16
-		;idiv 	r8				;	eax = x / 16 |||| edx = x % 16
-		;sal	eax, 4			;   eax = x * 16 (aligned)
-	;; OPTIMIZATION
-	mov	edx,	r9d
-	mov	eax,	r9d
-	and	edx,	0x0F		; edx = x % 16
-	and	eax,	0xFFFFFFF0	; eax / 16  then eax * 16
-
-	xor		r10,  r10
-	mov		r10d, eax		;	r10d = x_aligned
-
-	mov 	r12d, edx		;	r12d = x % 16
-
-; Calculate number of sections
-		;mov 	eax, ecx		;	eax = matSize
-		;mov 	edx, 0
-		;mov		r8, 4
-		;idiv 	r8				;	eax = matSize / 4 |||| edx = matSize % 4
-	;; OPTIMIZATION
-	mov	eax, ecx
+	add rdi, rdx
+	; Calculate number of sections
+ 	mov	eax, ecx
 	mov	edx, ecx
 	sar eax, 2					; 	eax = matSize / 4
 	and	edx, 0x03				;	edx = matSize % 4
 
-
-	inc		eax				;	eax = nSections
+	inc eax
 
 	mov     r14d, edx		;   r14d = matSize % 4
 
-; Iterate sections
-	mov 	r11d, ecx		;  r11d = matSize
-	add		rdi, r10        ;  alignedLine
-	mov		r8d, 0
+	xor		r10, r10
+	mov     r10d, ecx
+	sar     r10d, 1			; r10d = matSize / 2
 
-	mov  r13d, 0 			; r13d = line_x_offset
+	; set rdi to correct position
 
+	sub rdi, r10
 	; initizalize result
 	pxor xmm0, xmm0
 
@@ -350,60 +310,9 @@ loop_sections:
 	cmp	r8d, eax
 	je	end_loop_sections
 
+
 	movdqa	xmm1, [rsi]		; load matrix line section
-	movdqa  xmm2, [rdi]		; load image line section
-
-	mov ecx, r12d ; <- line_x
-	add ecx, r13d ; <- x_offset
-
-	cmp	ecx, 0
-	je	check_double_line
-	jmp	line_unaligned
-
-line_aligned:
-	; Do nothing, all data is in in our registers
-	jmp	continue_line
-
-line_unaligned:
-line_unaligned_loop:
-	call shift_xmm2_right
-
-
-
-check_double_line:
-; If data is really separated by 16bytes alignment, must do another read, algin and join
-	mov	ecx, r9d 	; x
-	add ecx, r13d   ; x + offset
-	add ecx, r11d	; x + offset + matSize
-
-	cmp ecx, 16		; if(x + matSize > 16) then it is separated
-	jle continue_line
-
-	movdqa	xmm3, [rdi+16] ; <- Second part of line
-
-	mov ecx, 16
-	sub ecx, r12d		; Inverse Alignment
-	sub ecx, r13d
-
-	cmp ecx, 0			; if ecx is zero, loop never ends
-	je  line_unaligned_loop_2_end
-	jg  line_unaligned_loop_2_left
-	; ecx is neither zero nor positive
-	; ecx = -ecx
-	neg ecx
-
-	jmp line_unaligned_loop_2_right
-
-
-line_unaligned_loop_2_left:
-	call shift_xmm3_left
-	jmp  line_unaligned_loop_2_end
-
-line_unaligned_loop_2_right:
-	call shift_xmm3_right
-
-line_unaligned_loop_2_end:
-	por xmm2, xmm3 ;
+	movdqu  xmm2, [rdi]		; load image line section
 
 continue_line:
 
@@ -413,33 +322,56 @@ continue_line:
 
 	; increase loop data
 	add	rsi,	16
+	add rdi,	4
 	inc	r8d
-
-	add	r13d,	4
-	cmp r13d,   16
-	jge increase_line_x
-
-	jmp check_last_section
-
-increase_line_x:		; if more than 16 pixel has been readed, increase line position and reset offset
-	mov r13d, 0
-	add rdi, 16
 
 check_last_section:
 	cmp r8d, eax
 	je  is_last_section
-	jmp continue_overflow_data
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;jmp continue_overflow_data
+	; Multiply and sum
+	nop
+	mulps  	xmm1, xmm2
+
+	;; OPTMIZATION
+	haddps	xmm1, xmm1
+	haddps	xmm1, xmm1
+
+
+
+	; Add to result
+	addss	xmm0, xmm1
+
+	jmp loop_sections
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 is_last_section: ; Zero overflowing data (outside matrix convolution)
 	cmp r14d, 1
 	je keep_1_float					; if (matSize % 4 == 1)
 	pand xmm2, [and_keep_3_float] 	; if matSize % 4 != 1 then its 3
-	jmp continue_overflow_data
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;jmp continue_overflow_data
+	; Multiply and sum
+	mulps  	xmm1, xmm2
+
+	;; OPTMIZATION
+	haddps	xmm1, xmm1
+	haddps	xmm1, xmm1
+
+
+
+	; Add to result
+	addss	xmm0, xmm1
+
+	jmp loop_sections
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 keep_1_float:
 	pand xmm2, [and_keep_1_float]
-
-continue_overflow_data:
 
 	; Multiply and sum
 	mulps  	xmm1, xmm2
@@ -448,19 +380,7 @@ continue_overflow_data:
 	haddps	xmm1, xmm1
 	haddps	xmm1, xmm1
 
-		;	movdqa	xmm2, xmm1
-		;	movdqa  xmm3, xmm1
-		;	movdqa  xmm4, xmm1
 
-
-
-		;	pshufb  xmm2, [shuffle_get_2nd_float]
-		;	pshufb  xmm3, [shuffle_get_3rd_float]
-		;	pshufb  xmm4, [shuffle_get_4th_float]
-
-		;	addss   xmm1, xmm2
-		;	addss   xmm1, xmm3
-		;	addss	xmm1, xmm4
 
 	; Add to result
 	addss	xmm0, xmm1
@@ -477,207 +397,3 @@ end_loop_sections:
 	pop rbp
 
 	ret			; return
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SHIFTING FUNCTIONS
-
-section .rodata
-shift_xmm2_right_table:
-	dq	.0, .1, .2, .3, .4, .5, .6, .7, .8, .9, .10, .11, .12, .13, .14, .15
-
-shift_xmm3_right_table:
-	dq	.0, .1, .2, .3, .4, .5, .6, .7, .8, .9, .10, .11, .12, .13, .14, .15
-
-shift_xmm3_left_table:
-	dq	.0, .1, .2, .3, .4, .5, .6, .7, .8, .9, .10, .11, .12, .13, .14, .15
-
-section .text
-
-shift_xmm2_right:	; (ecx times)
-	;test ecx, 0xFFFFFFF0
-	;jnz	default_shift_xmm2_right
-	cmp ecx, 16
-	jge	default_shift_xmm2_right
-	mov rcx, [shift_xmm2_right_table + ecx * 8]
-	jmp rcx
-
-default_shift_xmm2_right:
-	pxor xmm2, xmm2
-	ret	;
-
-
-shift_xmm3_right:	; (ecx times)
-	;test ecx, 0xFFFFFFF0
-	;jnz default_shift_xmm3_right
-	cmp ecx, 16
-	jge	default_shift_xmm3_right
-	mov rcx, [shift_xmm3_right_table + ecx * 8]
-	jmp	rcx
-default_shift_xmm3_right:
-	pxor	xmm3, xmm3
-	ret	;
-
-shift_xmm3_left:	; (ecx times)
-	;test ecx, 0xFFFFFFF0
-	;jnz	default_shift_xmm3_left
-	cmp ecx, 16
-	jge	default_shift_xmm3_left
-	mov rcx, [shift_xmm3_left_table + ecx * 8]
-	jmp	rcx
-default_shift_xmm3_left:
-	pxor	xmm3, xmm3
-	ret	;
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; shift_xmm2_right
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-shift_xmm2_right_table.0:
-	ret
-shift_xmm2_right_table.1:
-	psrldq xmm2, 1
-	ret
-shift_xmm2_right_table.2:
-	psrldq xmm2, 2
-	ret
-shift_xmm2_right_table.3:
-	psrldq xmm2, 3
-	ret
-shift_xmm2_right_table.4:
-	psrldq xmm2, 4
-	ret
-shift_xmm2_right_table.5:
-	psrldq xmm2, 5
-	ret
-shift_xmm2_right_table.6:
-	psrldq xmm2, 6
-	ret
-shift_xmm2_right_table.7:
-	psrldq xmm2, 7
-	ret
-shift_xmm2_right_table.8:
-	psrldq xmm2, 8
-	ret
-shift_xmm2_right_table.9:
-	psrldq xmm2, 9
-	ret
-shift_xmm2_right_table.10:
-	psrldq xmm2, 10
-	ret
-shift_xmm2_right_table.11:
-	psrldq xmm2, 11
-	ret
-shift_xmm2_right_table.12:
-	psrldq xmm2, 12
-	ret
-shift_xmm2_right_table.13:
-	psrldq xmm2, 13
-	ret
-shift_xmm2_right_table.14:
-	psrldq xmm2, 14
-	ret
-shift_xmm2_right_table.15:
-	psrldq xmm2, 15
-	ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; shift_xmm3_right
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-shift_xmm3_right_table.0:
-	ret
-shift_xmm3_right_table.1:
-	psrldq xmm3, 1
-	ret
-shift_xmm3_right_table.2:
-	psrldq xmm3, 2
-	ret
-shift_xmm3_right_table.3:
-	psrldq xmm3, 3
-	ret
-shift_xmm3_right_table.4:
-	psrldq xmm3, 4
-	ret
-shift_xmm3_right_table.5:
-	psrldq xmm3, 5
-	ret
-shift_xmm3_right_table.6:
-	psrldq xmm3, 6
-	ret
-shift_xmm3_right_table.7:
-	psrldq xmm3, 7
-	ret
-shift_xmm3_right_table.8:
-	psrldq xmm3, 8
-	ret
-shift_xmm3_right_table.9:
-	psrldq xmm3, 9
-	ret
-shift_xmm3_right_table.10:
-	psrldq xmm3, 10
-	ret
-shift_xmm3_right_table.11:
-	psrldq xmm3, 11
-	ret
-shift_xmm3_right_table.12:
-	psrldq xmm3, 12
-	ret
-shift_xmm3_right_table.13:
-	psrldq xmm3, 13
-	ret
-shift_xmm3_right_table.14:
-	psrldq xmm3, 14
-	ret
-shift_xmm3_right_table.15:
-	psrldq xmm3, 15
-	ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; shift_xmm3_left
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-shift_xmm3_left_table.0:
-	ret
-shift_xmm3_left_table.1:
-	pslldq xmm3, 1
-	ret
-shift_xmm3_left_table.2:
-	pslldq xmm3, 2
-	ret
-shift_xmm3_left_table.3:
-	pslldq xmm3, 3
-	ret
-shift_xmm3_left_table.4:
-	pslldq xmm3, 4
-	ret
-shift_xmm3_left_table.5:
-	pslldq xmm3, 5
-	ret
-shift_xmm3_left_table.6:
-	pslldq xmm3, 6
-	ret
-shift_xmm3_left_table.7:
-	pslldq xmm3, 7
-	ret
-shift_xmm3_left_table.8:
-	pslldq xmm3, 8
-	ret
-shift_xmm3_left_table.9:
-	pslldq xmm3, 9
-	ret
-shift_xmm3_left_table.10:
-	pslldq xmm3, 10
-	ret
-shift_xmm3_left_table.11:
-	pslldq xmm3, 11
-	ret
-shift_xmm3_left_table.12:
-	pslldq xmm3, 12
-	ret
-shift_xmm3_left_table.13:
-	pslldq xmm3, 13
-	ret
-shift_xmm3_left_table.14:
-	pslldq xmm3, 14
-	ret
-shift_xmm3_left_table.15:
-	pslldq xmm3, 15
-	ret

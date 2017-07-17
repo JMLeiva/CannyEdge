@@ -36,9 +36,15 @@ void applyThreshold(const Image* src, const unsigned char threshold, Image* dst)
 void applyThresholdLowHigh_c(const Image* src, const unsigned char thresholdlow,
 		const unsigned char thresholdHigh, const unsigned char vlow,
 		const unsigned char vHigh, Image* dst) {
+
+
+	assert(src->bpp == 1);
+
 	emptyImageWithFormat(src->width, src->height, src->bpp, dst);
 
-	for (unsigned int i = 0; i < src->width * src->height; i += src->bpp) {
+
+
+	/*for (unsigned int i = 0; i < src->width * src->height; i += src->bpp) {
 		unsigned short lum = 0;
 
 		// Alpha se esta considerando como una canal de luz mas.
@@ -61,12 +67,34 @@ void applyThresholdLowHigh_c(const Image* src, const unsigned char thresholdlow,
 				dst->data[i + b] = vHigh;
 			}
 		}
+	}*/
+
+	for (unsigned int i = 0; i < src->width * src->height; i += 1) {
+		unsigned short lum = 0;
+
+		// Alpha se esta considerando como una canal de luz mas.
+		lum += src->data[i];
+
+		lum /= src->bpp;
+
+		if (lum < thresholdlow) {
+			dst->data[i] = 0;
+
+		} else if (lum < thresholdHigh) {
+			dst->data[i] = vlow;
+
+		} else {
+			dst->data[i] = vHigh;
+		}
 	}
 }
 
 void applyThresholdLowHigh_asm(const Image* src,
 		const unsigned char thresholdlow, const unsigned char thresholdHigh,
 		const unsigned char vlow, const unsigned char vHigh, Image* dst) {
+
+	assert(src->bpp == 1);
+
 	applyThresholdLowHigh_asm_impl_1bpp(src, thresholdlow, thresholdHigh, vlow,
 			vHigh, dst);
 
@@ -75,9 +103,10 @@ void applyThresholdLowHigh_asm(const Image* src,
 
 	unsigned int unalignedStart = totalSize;
 
-	while (totalSize - unalignedStart < 16) {
+	/*while (totalSize - unalignedStart < 16) {
 		unalignedStart -= dst->bpp;
 	}
+
 
 	for (unsigned int i = unalignedStart; i < totalSize; i += src->bpp) {
 		unsigned short lum = 0;
@@ -101,6 +130,29 @@ void applyThresholdLowHigh_asm(const Image* src,
 			for (unsigned char b = 0; b < src->bpp; b++) {
 				dst->data[i + b] = vHigh;
 			}
+		}
+	}*/
+
+	while (totalSize - unalignedStart < 16) {
+		unalignedStart -= 1;
+	}
+
+	for (unsigned int i = unalignedStart; i < totalSize; i += src->bpp) {
+		unsigned short lum = 0;
+
+		// Alpha se esta considerando como una canal de luz mas.
+		lum += src->data[i];
+
+		lum /= src->bpp;
+
+		if (lum < thresholdlow) {
+			dst->data[i] = 0;
+
+		} else if (lum < thresholdHigh) {
+			dst->data[i] = vlow;
+
+		} else {
+			dst->data[i] = vHigh;
 		}
 	}
 }
@@ -267,7 +319,7 @@ void applyHysteresisThreshold(const Image* src, Image* dst) {
 
 void flattenConfilctMap(unsigned int* map, unsigned int size)
 {
-	for(unsigned int index = 0; index <= size; index++)
+	for(unsigned int index = 0; index < size; index++)
 	{
 		map[index] = maxValueForConflictGroup(map, size, index);
 	}
@@ -276,6 +328,11 @@ void flattenConfilctMap(unsigned int* map, unsigned int size)
 int maxValueForConflictGroup(unsigned int* map, unsigned int size, unsigned int index)
 {
 	unsigned int maxValue = map[index];
+
+	if(index > maxValue)
+	{
+		return index;
+	}
 
 	while(TRUE)
 	{
