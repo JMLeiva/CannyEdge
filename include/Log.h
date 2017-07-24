@@ -14,8 +14,6 @@ void log_verbose(const char* format, ...);
 void log_verbose_flush(const char* format, ...);
 
 void log_sm(const SquareMatrix* mat);
-void log_um(const UC_Matrix* mat);
-void log_um_cap(const UC_Matrix* mat, const unsigned int capW, const unsigned int capH);
 void log_im(const UI_Matrix* mat);
 void log_im_cap(const UI_Matrix* mat, const unsigned int capW, const unsigned int capH);
 void log_i(const Image* image);

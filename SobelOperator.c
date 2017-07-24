@@ -26,32 +26,28 @@ void applySobelOperator_c(const Image* src, Image* dstLum, Image* dstAngle)
 	short* xResult = convolute_c(src, &xMat);
 	short* yResult = convolute_c(src, &yMat);
 
-	//log(xResult, image->width, image->height, image->bpp);
-	//log(yResult, image->width, image->height, image->bpp);
 	emptyImageWithFormat(src->width, src->height, src->bpp, dstLum);
 	emptyImageWithFormat(src->width, src->height, src->bpp, dstAngle); 
 
 	for (unsigned int i = 0; i < src->width * src->height * src->bpp; i++)
 	{
-		//for (int c = 0; c < src->bpp; c++)
-		//{
-			float v = sqrt(xResult[i] * xResult[i] + yResult[i] * yResult[i]); //abs(xResult[i]) + abs(yResult[i]);//
 
-			if(v > 255)
-			{
-				dstLum->data[i] = 255;
-			}
-			else
-			{
-				dstLum->data[i] = (unsigned char)v;
-			}
+		float v = sqrt(xResult[i] * xResult[i] + yResult[i] * yResult[i]); //abs(xResult[i]) + abs(yResult[i]);//
 
-			short angle = 0;
+		if(v > 255)
+		{
+			dstLum->data[i] = 255;
+		}
+		else
+		{
+			dstLum->data[i] = (unsigned char)v;
+		}
 
-			angle = normalizeAngle(atan2f(xResult[i], yResult[i]));
+		short angle = 0;
 
-			dstAngle->data[i] = angle;
-		//}
+		angle = normalizeAngle(atan2f(xResult[i], yResult[i]));
+
+		dstAngle->data[i] = angle;
 	}
 
 	free(xResult);
@@ -134,27 +130,24 @@ void applySobelOperator_asm(const Image* src, Image* dstLum, Image* dstAngle)
 
 	//apply_sobel_gradient_calculation_1bpp(xResult, yResult, dstLum, dstAngle);
 
-
 	for (unsigned int i = 0; i < src->width * src->height * src->bpp; i++)
 	{
-		//for (int c = 0; c < src->bpp; c++)
-		//{
-			float v = sqrt(xResult[i] * xResult[i] + yResult[i] * yResult[i]); //abs(xResult[i]) + abs(yResult[i]);//
-			if(v > 255)
-			{
-				dstLum->data[i] = 255;
-			}
-			else
-			{
-				dstLum->data[i] = (unsigned char)v;
-			}
 
-			short angle = 0;
+		float v = sqrt(xResult[i] * xResult[i] + yResult[i] * yResult[i]); //abs(xResult[i]) + abs(yResult[i]);//
+		if(v > 255)
+		{
+			dstLum->data[i] = 255;
+		}
+		else
+		{
+			dstLum->data[i] = (unsigned char)v;
+		}
 
-			angle = normalizeAngle(atan2f(xResult[i], yResult[i]));
+		short angle = 0;
 
-			dstAngle->data[i] = angle;
-		//}
+		angle = normalizeAngle(atan2f(xResult[i], yResult[i]));
+
+		dstAngle->data[i] = angle;
 	}
 
 	free(xResult);

@@ -42,33 +42,6 @@ void applyThresholdLowHigh_c(const Image* src, const unsigned char thresholdlow,
 
 	emptyImageWithFormat(src->width, src->height, src->bpp, dst);
 
-
-
-	/*for (unsigned int i = 0; i < src->width * src->height; i += src->bpp) {
-		unsigned short lum = 0;
-
-		// Alpha se esta considerando como una canal de luz mas.
-		for (unsigned char b = 0; b < src->bpp; b++) {
-			lum += src->data[i + b];
-		}
-
-		lum /= src->bpp;
-
-		if (lum < thresholdlow) {
-			for (unsigned char b = 0; b < src->bpp; b++) {
-				dst->data[i + b] = 0;
-			}
-		} else if (lum < thresholdHigh) {
-			for (unsigned char b = 0; b < src->bpp; b++) {
-				dst->data[i + b] = vlow;
-			}
-		} else {
-			for (unsigned char b = 0; b < src->bpp; b++) {
-				dst->data[i + b] = vHigh;
-			}
-		}
-	}*/
-
 	for (unsigned int i = 0; i < src->width * src->height; i += 1) {
 		unsigned short lum = 0;
 
@@ -102,36 +75,6 @@ void applyThresholdLowHigh_asm(const Image* src,
 	unsigned int totalSize = src->width * src->height * src->bpp;
 
 	unsigned int unalignedStart = totalSize;
-
-	/*while (totalSize - unalignedStart < 16) {
-		unalignedStart -= dst->bpp;
-	}
-
-
-	for (unsigned int i = unalignedStart; i < totalSize; i += src->bpp) {
-		unsigned short lum = 0;
-
-		// Alpha se esta considerando como una canal de luz mas.
-		for (unsigned char b = 0; b < src->bpp; b++) {
-			lum += src->data[i + b];
-		}
-
-		lum /= src->bpp;
-
-		if (lum < thresholdlow) {
-			for (unsigned char b = 0; b < src->bpp; b++) {
-				dst->data[i + b] = 0;
-			}
-		} else if (lum < thresholdHigh) {
-			for (unsigned char b = 0; b < src->bpp; b++) {
-				dst->data[i + b] = vlow;
-			}
-		} else {
-			for (unsigned char b = 0; b < src->bpp; b++) {
-				dst->data[i + b] = vHigh;
-			}
-		}
-	}*/
 
 	while (totalSize - unalignedStart < 16) {
 		unalignedStart -= 1;
@@ -182,10 +125,6 @@ void applyHysteresisThreshold(const Image* src, Image* dst) {
 	// ROW BY ROW PASS
 	for (unsigned int index = 0; index < src->width * src->height; index++) {
 		int a = 0;
-
-		if (index == 527) {
-			a++;
-		}
 
 		if (src->data[index] == 0) {
 			hystMatrix.data[index] = 0;

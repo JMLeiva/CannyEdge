@@ -112,27 +112,3 @@ endLoop:
 	pop rbp
 
 	ret			; return
-
-
-
-;for (unsigned int i = 0; i < src->width * src->height * src->bpp; i++)
-;	{
-;		for (int c = 0; c < src->bpp; c++)
-;		{
-;			float v = abs(xResult[i]) + abs(yResult[i]);//sqrt(xResult.data[i] * xResult.data[i] + yResult.data[i] * yResult.data[i]);
-;			if(v > 255)
-;			{
-;				dstLum->data[i] = 255;
-;			}
-;			else
-;			{
-;				dstLum->data[i] = (unsigned char)v;
-;			}
-;
-;			short angle = 0;
-;
-;			angle = normalizeAngle(atan2f(xResult[i], yResult[i]));
-;
-;			dstAngle->data[i] = angle;
-;		}
-;	}

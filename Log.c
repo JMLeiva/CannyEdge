@@ -112,40 +112,6 @@ void log_sm(const SquareMatrix* mat)
 	printf("\n--------------------------");
 }
 
-void log_um(const UC_Matrix* mat)
-{
-	printf("--------------------------\n");
-
-	for (int y = 0; y < mat->height; y++)
-	{
-		for (int x = 0; x < mat->width; x++)
-		{
-			printf("[%3d]", mat->data[y * mat->width + x]);
-		}
-
-		printf("\n");
-	}
-
-	printf("--------------------------\n");
-}
-
-void log_um_cap(const UC_Matrix* mat, unsigned int capW, unsigned int capH)
-{
-	printf("--------------------------\n");
-
-	for (unsigned int y = 0; y < capH; y++)
-	{
-		for (unsigned int x = 0; x < capW; x++)
-		{
-			printf("[%3d]", mat->data[y * mat->width + x]);
-		}
-
-		printf("\n");
-	}
-
-	printf("--------------------------\n");
-}
-
 void log_im(const UI_Matrix* mat)
 {
 	printf("--------------------------\n");

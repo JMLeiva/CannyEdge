@@ -17,7 +17,4 @@ void emptyImageWithFormat(const unsigned short width, const unsigned short heigh
 UI_Matrix getUI_Matrix(const unsigned int width, const unsigned int height);
 UI_Matrix getUI_Matrix_v(const unsigned int width, const unsigned int height, const unsigned char defaultValue);
 
-UC_Matrix getUC_Matrix(const unsigned int width, const unsigned int height);
-UC_Matrix getUC_Matrix_v(const unsigned int width, const unsigned int height, const unsigned char defaultValue);
-
 #endif

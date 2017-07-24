@@ -26,8 +26,6 @@ short* convolute_c(const Image* src, const SquareMatrix* mat)
 				x--;
 			}
 
-			//srcIndex = (y * src->width + x) * src->bpp;
-
 			performConvolutionStep(src, mat, x, y, newData + srcIndex);
 
 			srcIndex += src->bpp;
@@ -45,13 +43,6 @@ void performConvolutionStep(const Image* image, const SquareMatrix* mat, const u
 
 	int xOffset, yOffset;
 
-
-	/*float* fDst = (float*)malloc(image->bpp * sizeof(float));
-
-	for (unsigned char i = 0; i < image->bpp; i++)
-	{
-		fDst[(int)i] = 0;
-	}*/
 
 	float fDst = 0;
 
@@ -79,17 +70,6 @@ void performConvolutionStep(const Image* image, const SquareMatrix* mat, const u
 			}
 
 
-			/*srcIndex = ((y + yOffset) * image->width + (x + xOffset)) * image->bpp;
-
-			float matValue = mat->data[matIndex];
-
-			for (unsigned char i = 0; i < image->bpp; i++)
-			{
-				float delta = image->data[srcIndex + i] * matValue;
-				fDst[(int)i] += delta;
-			}*/
-
-
 
 			srcIndex = ((y + yOffset) * image->width + (x + xOffset));
 
@@ -102,14 +82,6 @@ void performConvolutionStep(const Image* image, const SquareMatrix* mat, const u
 		}
 	}
 
-	/*for (unsigned char i = 0; i < image->bpp; i++)
-	{
-		dst[i] = (short)fDst[(int)i];
-	}
-
-	free(fDst);
-
-	*/
 
 	dst[0] = (short)fDst;
 }
@@ -140,24 +112,6 @@ void replaceData(const short* src, Image* dst)
 	}
 }
 
-UC_Matrix getUC_Matrix(const unsigned int width, const unsigned int height)
-{
-	UC_Matrix m;
-	m.width = width;
-	m.height = height;
-	m.data = (unsigned char*)malloc(width * height);
-	return m;
-}
-
-UC_Matrix getUC_Matrix_v(const unsigned int width, const unsigned int height, const unsigned char defaultValue)
-{
-	UC_Matrix m;
-	m.width = width;
-	m.height = height;
-	m.data = (unsigned char*)malloc(width * height);
-	memset(m.data, defaultValue, width * height);
-	return m;
-}
 
 UI_Matrix getUI_Matrix(const unsigned int width, const unsigned int height)
 {

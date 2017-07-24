@@ -16,17 +16,6 @@ void applyNonMaxSuppression(const Image* lum, const Image* angle, Image* dst)
 		{
 			unsigned int index = (y * lum->width + x) * lum->bpp;
 			
-			/*for (unsigned char b = 0; b < lum->bpp; b++)
-			{
-				if (isMax(lum, x, y, angle->data[index + b], b))
-				{
-					dst->data[index + b] = lum->data[index + b];
-				}
-				else
-				{
-					dst->data[index + b] = 0;
-				}
-			}*/
 			if (isMax(lum, x, y, angle->data[index], 0))
 			{
 				dst->data[index] = lum->data[index];

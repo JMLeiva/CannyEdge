@@ -24,12 +24,6 @@ typedef struct
 	float* data;
 } SquareMatrix;
 
-typedef struct
-{
-	unsigned short width;
-	unsigned short height;
-	unsigned char* data;
-} UC_Matrix;
 
 typedef struct
 {
